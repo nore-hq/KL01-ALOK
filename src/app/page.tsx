@@ -1,5 +1,66 @@
 import Link from 'next/link';
-import { Search, Bell, Plus, TrendingUp, Calendar, Banknote } from 'lucide-react';
+import { Search, Bell, Plus, TrendingUp, Calendar, Banknote, Loader2 } from 'lucide-react';
+import { getDb } from '@/db';
+import { employees, salaryAdvances } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
+import { Suspense } from 'react';
+
+export const runtime = 'edge';
+
+async function DashboardMetrics() {
+  const db = getDb();
+
+  // Fetch real data from D1
+  const staffQuery = await db.select({ count: sql<number>`count(*)` }).from(employees).where(eq(employees.status, 'ACTIVE'));
+  const totalStaff = staffQuery[0]?.count || 0;
+
+  const advanceQuery = await db.select({ total: sql<number>`sum(${salaryAdvances.amount})` }).from(salaryAdvances);
+  const pendingAdvances = advanceQuery[0]?.total || 0;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+      <div className="sm:px-4 first:pl-0">
+        <div className="text-sm text-gray-500 mb-2">Total Staff</div>
+        <div className="flex items-end gap-3">
+          <span className="text-3xl font-bold text-gray-900">{totalStaff}</span>
+          <span className="text-[10px] font-bold bg-[#E2F898] text-[#143d30] px-2 py-0.5 rounded flex items-center gap-1 mb-1"><Plus className="w-3 h-3" /> Active</span>
+        </div>
+      </div>
+
+      <div className="sm:px-4 pt-4 sm:pt-0">
+        <div className="text-sm text-gray-500 mb-2">Jobs Today</div>
+        <div className="flex items-end gap-3">
+          <span className="text-3xl font-bold text-gray-900">0</span>
+          <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1 mb-1">No data</span>
+        </div>
+      </div>
+
+      <div className="sm:px-4 pt-4 sm:pt-0">
+        <div className="text-sm text-gray-500 mb-2">Today's Revenue</div>
+        <div className="flex items-end gap-3">
+          <span className="text-3xl font-bold text-gray-900">₹0</span>
+        </div>
+      </div>
+
+      <div className="sm:px-4 pt-4 sm:pt-0">
+        <div className="text-sm text-gray-500 mb-2">Pending Advances</div>
+        <div className="flex items-end gap-3">
+          <span className="text-3xl font-bold text-gray-900">₹{pendingAdvances}</span>
+          <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded flex items-center mb-1">Unsettled</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricsSkeleton() {
+  return (
+    <div className="flex items-center justify-center p-8 text-gray-400">
+      <Loader2 className="w-6 h-6 animate-spin text-[#143d30] mr-2" />
+      <span className="text-sm font-medium">Loading metrics...</span>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   return (
@@ -36,39 +97,9 @@ export default function DashboardPage() {
       {/* KPI Metrics Row */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Operations Overview</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-
-          <div className="sm:px-4 first:pl-0">
-            <div className="text-sm text-gray-500 mb-2">Total Staff</div>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-gray-900">12</span>
-              <span className="text-[10px] font-bold bg-[#E2F898] text-[#143d30] px-2 py-0.5 rounded flex items-center gap-1 mb-1"><Plus className="w-3 h-3" /> Active</span>
-            </div>
-          </div>
-
-          <div className="sm:px-4 pt-4 sm:pt-0">
-            <div className="text-sm text-gray-500 mb-2">Jobs Today</div>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-gray-900">45</span>
-              <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded flex items-center gap-1 mb-1"><TrendingUp className="w-3 h-3" /> 12%</span>
-            </div>
-          </div>
-
-          <div className="sm:px-4 pt-4 sm:pt-0">
-            <div className="text-sm text-gray-500 mb-2">Today's Revenue</div>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-gray-900">₹8,450</span>
-            </div>
-          </div>
-
-          <div className="sm:px-4 pt-4 sm:pt-0">
-            <div className="text-sm text-gray-500 mb-2">Pending Advances</div>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-gray-900">₹1,200</span>
-              <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded flex items-center mb-1">Unsettled</span>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={<MetricsSkeleton />}>
+          <DashboardMetrics />
+        </Suspense>
       </div>
 
       {/* Quick Action Navigation Panels */}

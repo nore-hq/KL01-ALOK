@@ -37,7 +37,7 @@ export async function createEmployee(formData: FormData) {
         const name = formData.get('name') as string;
         const age = parseInt(formData.get('age') as string, 10);
         const phone = formData.get('phone') as string;
-        const position = formData.get('position') as string;
+        const position = formData.get('position') as 'MECHANIC' | 'CLEANER' | 'MANAGER' | 'RECEPTIONIST';
         const dailySalary = parseFloat(formData.get('dailySalary') as string);
 
         if (!name || !phone || !position || isNaN(dailySalary)) {

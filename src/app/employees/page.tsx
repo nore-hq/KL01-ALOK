@@ -190,7 +190,13 @@ export default function EmployeesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Position</label>
-                                <input name="position" required placeholder="Polish Specialist" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
+                                <select name="position" required className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20">
+                                    <option value="">Select Role</option>
+                                    <option value="MECHANIC">Mechanic</option>
+                                    <option value="CLEANER">Cleaner</option>
+                                    <option value="MANAGER">Manager</option>
+                                    <option value="RECEPTIONIST">Receptionist</option>
+                                </select>
                             </div>
 
                             <div>

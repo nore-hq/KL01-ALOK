@@ -5,4 +5,3 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "car-spa-db"
-database_id = "f82e7247-1a3a-4f3f-9252-de6760618680"
