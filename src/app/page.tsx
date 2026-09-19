@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { Search, Bell, Plus, TrendingUp, Calendar, Banknote, Loader2 } from 'lucide-react';
+import { Search, Bell, Plus, Calendar, Banknote, Loader2, FileText } from 'lucide-react';
 import { getDb } from '@/db';
-import { employees, salaryAdvances } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { employees, salaryAdvances, bills } from '@/db/schema';
+import { eq, sql, like } from 'drizzle-orm';
 import { Suspense } from 'react';
 
 export const runtime = 'edge';
@@ -17,6 +17,12 @@ async function DashboardMetrics() {
   const advanceQuery = await db.select({ total: sql<number>`sum(${salaryAdvances.amount})` }).from(salaryAdvances);
   const pendingAdvances = advanceQuery[0]?.total || 0;
 
+  // Real Billing Metrics for Today
+  const todayPrefix = new Date().toISOString().slice(0, 10);
+  const todayBills = await db.select().from(bills).where(like(bills.createdAt, `${todayPrefix}%`));
+  const jobsToday = todayBills.length;
+  const todaysRevenue = todayBills.reduce((sum, b) => sum + b.amount, 0);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
       <div className="sm:px-4 first:pl-0">
@@ -30,22 +36,24 @@ async function DashboardMetrics() {
       <div className="sm:px-4 pt-4 sm:pt-0">
         <div className="text-sm text-gray-500 mb-2">Jobs Today</div>
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">0</span>
-          <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1 mb-1">No data</span>
+          <span className="text-3xl font-bold text-gray-900">{jobsToday}</span>
+          <span className="text-[10px] font-bold bg-[#E2F898]/60 text-[#143d30] px-2 py-0.5 rounded flex items-center gap-1 mb-1">
+            {jobsToday > 0 ? `${jobsToday} Billed` : 'No jobs today'}
+          </span>
         </div>
       </div>
 
       <div className="sm:px-4 pt-4 sm:pt-0">
         <div className="text-sm text-gray-500 mb-2">Today's Revenue</div>
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">₹0</span>
+          <span className="text-3xl font-bold text-gray-900">₹{todaysRevenue.toLocaleString('en-IN')}</span>
         </div>
       </div>
 
       <div className="sm:px-4 pt-4 sm:pt-0">
         <div className="text-sm text-gray-500 mb-2">Pending Advances</div>
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">₹{pendingAdvances}</span>
+          <span className="text-3xl font-bold text-gray-900">₹{pendingAdvances.toLocaleString('en-IN')}</span>
           <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded flex items-center mb-1">Unsettled</span>
         </div>
       </div>
@@ -89,9 +97,11 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 mt-1 text-sm">Welcome back. Let's dive into today's operations.</p>
         </div>
-        <Link href="/employees" className="bg-[#143d30] hover:bg-[#1a4f3f] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Manage Staff
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/billing" className="bg-[#143d30] hover:bg-[#1a4f3f] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Create Bill
+          </Link>
+        </div>
       </div>
 
       {/* KPI Metrics Row */}
@@ -103,13 +113,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Action Navigation Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link href="/billing" className="group bg-white border border-gray-200 p-6 rounded-2xl hover:border-[#143d30]/30 transition-all shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">
+          <div className="h-12 w-12 bg-[#F3F4F6] group-hover:bg-[#E2F898] rounded-xl flex items-center justify-center text-xl mb-4 transition-colors">
+            <FileText className="w-6 h-6 text-[#143d30]" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Service Billing</h3>
+          <p className="text-sm text-gray-500 mt-2">Generate customer service invoices, issue print receipts, and track revenue.</p>
+        </Link>
+
         <Link href="/attendance" className="group bg-white border border-gray-200 p-6 rounded-2xl hover:border-[#143d30]/30 transition-all shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">
           <div className="h-12 w-12 bg-[#F3F4F6] group-hover:bg-[#E2F898] rounded-xl flex items-center justify-center text-xl mb-4 transition-colors">
             <Calendar className="w-6 h-6 text-[#143d30]" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Daily Attendance</h3>
-          <p className="text-sm text-gray-500 mt-2">Mark present status, late arrivals, and distribute daily cash advances.</p>
+          <p className="text-sm text-gray-500 mt-2">Mark present status, late arrivals, wage deductions, and distribute daily cash advances.</p>
         </Link>
 
         <Link href="/salary" className="group bg-white border border-gray-200 p-6 rounded-2xl hover:border-[#143d30]/30 transition-all shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">

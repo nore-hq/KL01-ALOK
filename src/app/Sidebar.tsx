@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, Calendar, Banknote } from "lucide-react";
+import { Home, Users, Calendar, Banknote, FileText } from "lucide-react";
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -39,6 +39,16 @@ export default function Sidebar() {
                             }`}
                     >
                         <Home className={`w-4 h-4 ${isActive('/') ? 'opacity-100 text-[#143d30]' : 'opacity-50'}`} /> Overview
+                    </Link>
+
+                    <Link
+                        href="/billing"
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors ${isActive('/billing')
+                                ? 'font-semibold text-gray-900 bg-[#E2F898]'
+                                : 'font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            }`}
+                    >
+                        <FileText className={`w-4 h-4 ${isActive('/billing') ? 'opacity-100 text-[#143d30]' : 'opacity-50'}`} /> Billing
                     </Link>
 
                     <Link

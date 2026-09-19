@@ -38,28 +38,71 @@ export async function getDailyAttendance(dateString: string) {
     }
 }
 
-export async function saveAttendanceRecord(data: { employeeId: string; date: string; status: 'PRESENT' | 'ABSENT' | 'HALF_DAY'; isLate: boolean; overtimeHours: number; notes?: string; }) {
+import { calculateLateDeduction } from '@/utils/payroll';
+
+export async function saveAttendanceRecord(data: {
+    employeeId: string;
+    date: string;
+    status: 'PRESENT' | 'ABSENT' | 'HALF_DAY';
+    isLate: boolean;
+    lateDeduction?: number;
+    overtimeHours: number;
+    notes?: string;
+}) {
     try {
         const db = getEdgeDb();
+        const computedDeduction = data.lateDeduction !== undefined
+            ? data.lateDeduction
+            : calculateLateDeduction({ isLate: data.isLate, status: data.status });
+
         const existing = await db.select().from(attendance).where(and(eq(attendance.employeeId, data.employeeId), eq(attendance.date, data.date)));
 
         if (existing.length > 0) {
-            await db.update(attendance).set({ status: data.status, isLate: data.isLate, overtimeHours: data.overtimeHours, notes: data.notes || '' }).where(eq(attendance.id, existing[0].id));
+            await db.update(attendance).set({
+                status: data.status,
+                isLate: data.isLate,
+                lateDeduction: computedDeduction,
+                overtimeHours: data.overtimeHours,
+                notes: data.notes || ''
+            }).where(eq(attendance.id, existing[0].id));
         } else {
-            await db.insert(attendance).values({ id: crypto.randomUUID(), employeeId: data.employeeId, date: data.date, status: data.status, isLate: data.isLate, overtimeHours: data.overtimeHours, notes: data.notes || '' });
+            await db.insert(attendance).values({
+                id: crypto.randomUUID(),
+                employeeId: data.employeeId,
+                date: data.date,
+                status: data.status,
+                isLate: data.isLate,
+                lateDeduction: computedDeduction,
+                overtimeHours: data.overtimeHours,
+                notes: data.notes || ''
+            });
         }
         revalidatePath('/attendance');
+        revalidatePath('/salary');
         return { success: true };
     } catch (err) {
+        console.error('Save attendance error:', err);
         return { success: false, error: 'Database update failed.' };
     }
 }
 
 export async function recordSalaryAdvance(data: { employeeId: string; amount: number; datePaid: string; notes?: string; }) {
     try {
+        if (!data.amount || isNaN(data.amount) || data.amount <= 0) {
+            return { success: false, error: 'Advance amount must be greater than ₹0.' };
+        }
         const db = getEdgeDb();
-        await db.insert(salaryAdvances).values({ id: crypto.randomUUID(), employeeId: data.employeeId, amount: data.amount, datePaid: data.datePaid, notes: data.notes || 'Cash Advance' });
+        await db.insert(salaryAdvances).values({
+            id: crypto.randomUUID(),
+            employeeId: data.employeeId,
+            amount: data.amount,
+            datePaid: data.datePaid,
+            notes: data.notes || 'Cash Advance'
+        });
         revalidatePath('/attendance');
+        revalidatePath('/employees');
+        revalidatePath(`/employees/${data.employeeId}`);
+        revalidatePath('/salary');
         return { success: true };
     } catch (err) {
         return { success: false, error: 'Failed to record advance cash.' };

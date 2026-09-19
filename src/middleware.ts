@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
     const user = await verifyToken(token);
 
     // Protect all internal CRM routes
-    const protectedRoutes = ['/', '/employees', '/attendance', '/salary'];
+    const protectedRoutes = ['/', '/employees', '/attendance', '/salary', '/billing'];
     const isProtectedRoute = protectedRoutes.some(route =>
         request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
     );

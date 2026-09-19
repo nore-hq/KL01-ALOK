@@ -5,10 +5,11 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, Banknote } from 'lucide-react';
+import { getEmployeeAdvanceDetails } from '@/app/actions/salary';
+import AdvanceSection from './AdvanceSection';
 
 export const runtime = 'edge';
 
-// Bulletproof Edge DB initializer
 function getEdgeDb() {
     const ctx = getRequestContext();
     const env = ctx?.env as any;
@@ -18,17 +19,19 @@ function getEdgeDb() {
 }
 
 export default async function EmployeeProfile({ params }: { params: Promise<{ id: string }> }) {
-    // Await the dynamic params for Next.js 16+ compatibility
     const resolvedParams = await params;
     const db = getEdgeDb();
 
-    // Fetch the specific employee
+    // Fetch employee
     const employeeData = await db.select().from(employees).where(eq(employees.id, resolvedParams.id)).limit(1);
     const employee = employeeData[0];
 
     if (!employee) {
         return notFound();
     }
+
+    // Fetch advance details
+    const advanceDetails = await getEmployeeAdvanceDetails(employee.id);
 
     return (
         <div className="max-w-5xl mx-auto space-y-8">
@@ -53,7 +56,7 @@ export default async function EmployeeProfile({ params }: { params: Promise<{ id
                 </div>
 
                 <div className="flex flex-col gap-2 text-right">
-                    <div className="text-sm text-gray-500 font-medium">Daily Rate</div>
+                    <div className="text-sm text-gray-500 font-medium">Daily Salary</div>
                     <div className="text-3xl font-bold text-gray-900">₹{employee.dailySalary}</div>
                 </div>
             </div>
@@ -93,7 +96,7 @@ export default async function EmployeeProfile({ params }: { params: Promise<{ id
                                 <Calendar className="w-6 h-6 text-[#143d30]" />
                             </div>
                             <div className="font-semibold text-gray-900">Log Attendance</div>
-                            <div className="text-xs text-gray-500 mt-1">Mark today's status or issue a cash advance.</div>
+                            <div className="text-xs text-gray-500 mt-1">Mark status, late arrival, or cash advance.</div>
                         </Link>
                         <Link href="/salary" className="group border border-gray-200 rounded-xl p-4 hover:border-[#143d30]/30 hover:bg-gray-50 transition-all">
                             <div className="text-xl mb-2">
@@ -104,6 +107,15 @@ export default async function EmployeeProfile({ params }: { params: Promise<{ id
                         </Link>
                     </div>
                 </div>
+            </div>
+
+            {/* Advance Section */}
+            <div className="pt-2 border-t border-gray-200/80">
+                <AdvanceSection
+                    employeeId={employee.id}
+                    employeeName={employee.name}
+                    advanceDetails={advanceDetails}
+                />
             </div>
 
         </div>

@@ -28,6 +28,7 @@ export const attendance = sqliteTable('attendance', {
     date: text('date').notNull(), // YYYY-MM-DD
     status: text('status', { enum: ['PRESENT', 'ABSENT', 'HALF_DAY'] }).notNull(),
     isLate: integer('is_late', { mode: 'boolean' }).default(false).notNull(),
+    lateDeduction: real('late_deduction').default(0).notNull(),
     overtimeHours: real('overtime_hours').default(0).notNull(),
     notes: text('notes'),
 });
@@ -39,4 +40,17 @@ export const salaryAdvances = sqliteTable('salary_advances', {
     amount: real('amount').notNull(),
     datePaid: text('date_paid').notNull(), // YYYY-MM-DD
     notes: text('notes'),
+});
+
+// Service Invoice & Customer Billing Table
+export const bills = sqliteTable('bills', {
+    id: text('id').primaryKey(),
+    billNumber: text('bill_number').notNull().unique(),
+    customerName: text('customer_name').notNull(),
+    vehicleNumber: text('vehicle_number').notNull(),
+    vehicleModel: text('vehicle_model').notNull(),
+    service: text('service').notNull(),
+    amount: real('amount').notNull(),
+    paymentMode: text('payment_mode', { enum: ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'] }).notNull(),
+    createdAt: text('created_at').notNull(),
 });
