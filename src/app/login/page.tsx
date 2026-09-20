@@ -1,12 +1,6 @@
 export const runtime = 'edge';
 
-import { redirect } from 'next/navigation';
-import { getDb } from '@/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { signToken } from '@/utils/auth';
-import { cookies } from 'next/headers';
-import { compareSync } from 'bcrypt-ts';
+import { signIn } from '@/app/actions/auth';
 
 export default async function LoginPage({
     searchParams,
@@ -14,45 +8,6 @@ export default async function LoginPage({
     searchParams?: Promise<{ message?: string }>;
 }) {
     const params = searchParams ? await searchParams : {};
-
-    const signIn = async (formData: FormData) => {
-        'use server';
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-
-        try {
-            const db = getDb();
-            const userRecords = await db.select().from(users).where(eq(users.email, email));
-
-            if (!userRecords || userRecords.length === 0) {
-                return redirect('/login?message=Invalid email or password');
-            }
-
-            const user = userRecords[0];
-            const passwordMatch = compareSync(password, user.passwordHash);
-
-            if (!passwordMatch) {
-                return redirect('/login?message=Invalid email or password');
-            }
-
-            const token = await signToken({ id: user.id, email: user.email, role: user.role });
-
-            const cookieStore = await cookies();
-            cookieStore.set('auth_token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 60 * 60 * 24 * 7, // 1 week
-                path: '/',
-            });
-        } catch (err: any) {
-            // If it's a redirect error thrown by Next.js, let it propagate
-            if (err?.message === 'NEXT_REDIRECT') throw err;
-            console.error('Login error:', err);
-            return redirect(`/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`);
-        }
-
-        return redirect('/');
-    };
 
     return (
         <div className="min-h-screen bg-[#F7F9FA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">

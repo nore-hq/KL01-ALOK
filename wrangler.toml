@@ -5,4 +5,5 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "car-spa-db"
+database_id = "71cd9fb3-8dfa-4af4-b99c-ddb01ba57374"
 migrations_dir = "drizzle"
