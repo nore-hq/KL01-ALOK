@@ -66,6 +66,7 @@ function MetricsSkeleton() {
     <div className="flex items-center justify-center p-8 text-gray-400">
       <Loader2 className="w-6 h-6 animate-spin text-[#143d30] mr-2" />
       <span className="text-sm font-medium">Loading metrics...</span>
+
     </div>
   );
 }
