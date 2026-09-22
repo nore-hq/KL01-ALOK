@@ -4,6 +4,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "car-spa-db"
-database_id = "71cd9fb3-8dfa-4af4-b99c-ddb01ba57374"
+database_name = "kl01-alok-db"
+database_id = "5c1361fb-afb4-4b6b-9bf2-576d1beb451a"
 migrations_dir = "drizzle"
+
