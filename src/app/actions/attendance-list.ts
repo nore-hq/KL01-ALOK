@@ -20,7 +20,7 @@ function getEdgeDb() {
             const session = await getAuthSession();
             const partnerId = session?.partnerId || null;
 
-            let staffQuery = db.select().from(employees).where(eq(employees.status, 'ACTIVE'));
+            let staffQuery = db.select().from(employees);
             if (partnerId) {
                 staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), eq(employees.partnerId, partnerId))) as any;
             } else {
