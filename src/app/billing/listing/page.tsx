@@ -166,10 +166,10 @@ export default function BillListingPage() {
                     <div className="text-[10px] text-white/50 mt-1">{filteredBills.length} bills found</div>
                 </div>
                 
-                {Object.entries(revenueByMode).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([mode, amount]) => (
+                {(Object.entries(revenueByMode) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([mode, amount]) => (
                     <div key={mode} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{mode}</div>
-                        <div className="text-xl font-bold text-gray-900">₹{amount.toFixed(2)}</div>
+                        <div className="text-xl font-bold text-gray-900">₹{(amount as number).toFixed(2)}</div>
                     </div>
                 ))}
             </div>

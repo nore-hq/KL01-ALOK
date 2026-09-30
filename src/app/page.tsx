@@ -35,7 +35,7 @@ async function DashboardMetrics() {
 
   // Calculate today's revenue and jobs
   const todayString = new Date().toISOString().split('T')[0];
-  let billingQuery = db.select().from(billing).where(like(billing.date, `${todayString}%`));
+  let billingQuery = db.select().from(billing);
   if (partnerId) {
     billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), eq(billing.partnerId, partnerId as string))) as any;
   } else {

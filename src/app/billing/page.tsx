@@ -18,7 +18,7 @@ export default function BillingPage() {
         vehicleNumber: '',
         vehicleModel: '',
         serviceType: '',
-        paymentMode: 'CASH' as const,
+        paymentMode: 'CASH',
         amount: '',
         date: new Date().toISOString().split('T')[0]
     });

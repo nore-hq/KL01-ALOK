@@ -64,7 +64,7 @@ export async function createEmployee(formData: FormData) {
             dailySalary,
             status: 'ACTIVE',
             createdAt: new Date().toISOString(),
-            partnerId,
+            partnerId: partnerId as string | null,
         });
 
         revalidatePath('/employees');

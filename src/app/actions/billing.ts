@@ -115,7 +115,7 @@ export async function createBill(data: {
             amount: data.amount,
             date: data.date,
             createdAt: new Date().toISOString(),
-            partnerId
+            partnerId: partnerId as string | null
         });
 
         revalidatePath('/billing');
