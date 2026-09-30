@@ -17,9 +17,9 @@ function getEdgeDb() {
     return drizzle(dbBinding);
 }
 
-export default async function EmployeeProfile({ params }: { params: Promise<{ id: string }> }) {
+export default async function EmployeeProfile({ params }: { params: { id: string } }) {
     // Await the dynamic params for Next.js 16+ compatibility
-    const resolvedParams = await params;
+    const resolvedParams = params;
     const db = getEdgeDb();
 
     // Fetch the specific employee

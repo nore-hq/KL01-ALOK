@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getEmployeeSalaryDetails } from '@/app/actions/salary';
 import { ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function EmployeeSalaryDetailsPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ month: string }> }) {
+export default function EmployeeSalaryDetailsPage({ params, searchParams }: { params: { id: string }, searchParams: { month?: string } }) {
     const router = useRouter();
-    const resolvedParams = use(params);
-    const resolvedSearchParams = use(searchParams);
+    
+    const resolvedParams = params;
+    const resolvedSearchParams = searchParams;
     
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
