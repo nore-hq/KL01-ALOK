@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getEmployees, createEmployee, removeEmployee } from '@/app/actions/employees';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/app/actions/employees';
 import Link from 'next/link';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search, X, Printer } from 'lucide-react';
 
 interface Employee {
     id: string;
@@ -19,7 +19,12 @@ export default function EmployeesPage() {
     const [staff, setStaff] = useState<Employee[]>([]);
     const [search, setSearch] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const [editEmp, setEditEmp] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(false);
+    
+    // Delete Modal State
+    const [deleteModalEmp, setDeleteModalEmp] = useState<Employee | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const loadStaff = async () => {
         const data = await getEmployees();
@@ -34,28 +39,41 @@ export default function EmployeesPage() {
         e.preventDefault();
         setLoading(true);
         const formData = new FormData(e.currentTarget);
-        const res = await createEmployee(formData);
+        
+        const res = editEmp 
+            ? await updateEmployee(editEmp.id, formData)
+            : await createEmployee(formData);
+            
         setLoading(false);
 
         if (res.success) {
             setIsOpen(false);
+            setEditEmp(null);
             loadStaff();
         } else {
-            alert(res.error || 'Failed to register employee');
+            alert(res.error || `Failed to ${editEmp ? 'update' : 'register'} employee`);
         }
     };
 
-    const handleRemove = async (id: string) => {
-        if (confirm('Deactivate this staff member?')) {
-            await removeEmployee(id);
+
+    const confirmDelete = async () => {
+        if (!deleteModalEmp) return;
+        setIsDeleting(true);
+        const res = await deleteEmployee(deleteModalEmp.id);
+        setIsDeleting(false);
+        if (res.success) {
+            setDeleteModalEmp(null);
             loadStaff();
+        } else {
+            alert(res.error || 'Failed to delete account');
         }
     };
 
     const filteredStaff = staff.filter(
         (emp) =>
             emp.name.toLowerCase().includes(search.toLowerCase()) ||
-            emp.position.toLowerCase().includes(search.toLowerCase())
+            emp.position.toLowerCase().includes(search.toLowerCase()) ||
+            emp.id.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -68,7 +86,7 @@ export default function EmployeesPage() {
                     <p className="text-sm text-gray-500 mt-1">Manage employee profiles and daily compensation.</p>
                 </div>
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => { setEditEmp(null); setIsOpen(true); }}
                     className="bg-[#143d30] hover:bg-[#1a4f3f] text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" /> Add Staff
@@ -122,7 +140,9 @@ export default function EmployeesPage() {
                                                     {emp.name.slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="font-semibold text-gray-900">{emp.name}</div>
+                                                    <div className="font-semibold text-gray-900">
+                                                        {emp.name} <span className="text-gray-400 font-normal text-xs ml-1">#{emp.id}</span>
+                                                    </div>
                                                     <div className="text-[11px] text-gray-400">{emp.age} yrs old</div>
                                                 </div>
                                             </Link>
@@ -140,14 +160,18 @@ export default function EmployeesPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 pr-6 text-right">
-                                            {emp.status === 'ACTIVE' && (
-                                                <button
-                                                    onClick={() => handleRemove(emp.id)}
-                                                    className="text-xs font-semibold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded transition"
-                                                >
-                                                    Deactivate
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={() => { setEditEmp(emp); setIsOpen(true); }}
+                                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded transition mr-2"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteModalEmp(emp)}
+                                                className="text-xs font-semibold text-red-600 hover:text-red-800 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded transition"
+                                            >
+                                                Delete
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -163,10 +187,10 @@ export default function EmployeesPage() {
                     <div className="bg-white rounded-2xl w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.1)] overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">New Staff Profile</h2>
-                                <p className="text-xs text-gray-500 mt-1">Enter details to generate an employee record.</p>
+                                <h2 className="text-xl font-bold text-gray-900">{editEmp ? 'Edit Staff Profile' : 'New Staff Profile'}</h2>
+                                <p className="text-xs text-gray-500 mt-1">{editEmp ? `Updating details for ${editEmp.name}.` : 'Enter details to generate an employee record.'}</p>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center">
+                            <button onClick={() => { setIsOpen(false); setEditEmp(null); }} className="h-8 w-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
@@ -174,23 +198,23 @@ export default function EmployeesPage() {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-gray-50">
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Full Name</label>
-                                <input name="name" required placeholder="John Doe" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
+                                <input name="name" defaultValue={editEmp?.name || ''} required placeholder="John Doe" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Age</label>
-                                    <input name="age" type="number" required placeholder="25" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
+                                    <input name="age" type="number" defaultValue={editEmp?.age || ''} required placeholder="25" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Phone Number</label>
-                                    <input name="phone" required placeholder="+91..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
+                                    <input name="phone" defaultValue={editEmp?.phone || ''} required placeholder="+91..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20" />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Position</label>
-                                <select name="position" required className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20">
+                                <select name="position" defaultValue={editEmp?.position || ''} required className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20">
                                     <option value="">Select Role</option>
                                     <option value="MECHANIC">Mechanic</option>
                                     <option value="CLEANER">Cleaner</option>
@@ -201,16 +225,52 @@ export default function EmployeesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Daily Rate (₹)</label>
-                                <input name="dailySalary" type="number" step="0.01" required placeholder="800" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 font-mono" />
+                                <input name="dailySalary" type="number" step="0.01" defaultValue={editEmp?.dailySalary || ''} required placeholder="800" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 font-mono" />
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">
-                                <button type="button" onClick={() => setIsOpen(false)} className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-xl transition">Cancel</button>
+                                <button type="button" onClick={() => { setIsOpen(false); setEditEmp(null); }} className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-xl transition">Cancel</button>
                                 <button type="submit" disabled={loading} className="bg-[#143d30] hover:bg-[#1a4f3f] text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-[0_8px_20px_rgba(20,61,48,0.2)] disabled:opacity-50">
-                                    {loading ? 'Saving...' : 'Create Profile'}
+                                    {loading ? 'Saving...' : editEmp ? 'Save Changes' : 'Create Profile'}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteModalEmp && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-[0_20px_60px_rgba(0,0,0,0.2)] overflow-hidden animate-scale-in">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">Delete Employee Account?</h2>
+                            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                                Are you sure you want to completely delete <strong className="text-gray-900">{deleteModalEmp.name}</strong>'s profile? This action is permanent and <strong className="text-red-600">cannot be recovered</strong>. All related attendance and salary records will also be erased.
+                            </p>
+                            
+                            <div className="flex justify-end gap-3 mt-8">
+                                <button
+                                    type="button"
+                                    onClick={() => setDeleteModalEmp(null)}
+                                    className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    disabled={isDeleting}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-[0_4px_12px_rgba(220,38,38,0.2)] disabled:opacity-50"
+                                >
+                                    {isDeleting ? 'Deleting...' : 'Yes, Delete Account'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

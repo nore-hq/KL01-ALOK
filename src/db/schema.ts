@@ -9,6 +9,15 @@ export const users = sqliteTable('users', {
     createdAt: text('created_at').notNull(),
 });
 
+// Partners (Contract Showrooms) Table
+export const partners = sqliteTable('partners', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    username: text('username').notNull().unique(),
+    passwordHash: text('password_hash').notNull(),
+    createdAt: text('created_at').notNull(),
+});
+
 // Employees Master Table
 export const employees = sqliteTable('employees', {
     id: text('id').primaryKey(),
@@ -19,6 +28,7 @@ export const employees = sqliteTable('employees', {
     dailySalary: real('daily_salary').notNull(),
     status: text('status', { enum: ['ACTIVE', 'INACTIVE'] }).default('ACTIVE').notNull(),
     createdAt: text('created_at').notNull(),
+    partnerId: text('partner_id').references(() => partners.id),
 });
 
 // Daily Attendance Records Table
@@ -28,8 +38,10 @@ export const attendance = sqliteTable('attendance', {
     date: text('date').notNull(), // YYYY-MM-DD
     status: text('status', { enum: ['PRESENT', 'ABSENT', 'HALF_DAY'] }).notNull(),
     isLate: integer('is_late', { mode: 'boolean' }).default(false).notNull(),
-    overtimeHours: real('overtime_hours').default(0).notNull(),
+    lateDeduction: real('late_deduction').default(0).notNull(),
+    overtimePay: real('overtime_pay').default(0).notNull(),
     notes: text('notes'),
+    timestamp: text('timestamp'),
 });
 
 // Advance Salary Payments Log Table
@@ -39,4 +51,19 @@ export const salaryAdvances = sqliteTable('salary_advances', {
     amount: real('amount').notNull(),
     datePaid: text('date_paid').notNull(), // YYYY-MM-DD
     notes: text('notes'),
+});
+
+// Billing System Table
+export const billing = sqliteTable('billing', {
+    id: text('id').primaryKey(),
+    serialNumber: integer('serial_number', { mode: 'number' }).notNull(),
+    customerName: text('customer_name').notNull(),
+    vehicleNumber: text('vehicle_number').notNull(),
+    vehicleModel: text('vehicle_model').notNull(),
+    serviceType: text('service_type').notNull(),
+    paymentMode: text('payment_mode').notNull(),
+    amount: real('amount').notNull(),
+    date: text('date').notNull(), // YYYY-MM-DD
+    createdAt: text('created_at').notNull(),
+    partnerId: text('partner_id').references(() => partners.id),
 });

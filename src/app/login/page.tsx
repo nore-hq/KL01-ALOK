@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { users } from '@/db/schema';
+import { users, partners } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { signToken } from '@/utils/auth';
 import { cookies } from 'next/headers';
@@ -17,38 +17,38 @@ export default async function LoginPage({
 
     const signIn = async (formData: FormData) => {
         'use server';
-        const email = formData.get('email') as string;
+        const emailOrUsername = formData.get('email') as string;
         const password = formData.get('password') as string;
 
         try {
             const db = getDb();
-            const userRecords = await db.select().from(users).where(eq(users.email, email));
+            const userRecords = await db.select().from(users).where(eq(users.email, emailOrUsername));
 
-            if (!userRecords || userRecords.length === 0) {
-                return redirect('/login?message=Invalid email or password');
+            if (userRecords && userRecords.length > 0) {
+                const user = userRecords[0];
+                if (!compareSync(password, user.passwordHash)) {
+                    return redirect('/login?message=Invalid credentials');
+                }
+                const token = await signToken({ id: user.id, email: user.email, role: user.role, username: user.email });
+                const cookieStore = await cookies();
+                cookieStore.set('auth_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' });
+            } else {
+                const partnerRecords = await db.select().from(partners).where(eq(partners.username, emailOrUsername));
+                if (!partnerRecords || partnerRecords.length === 0) {
+                    return redirect('/login?message=Invalid credentials');
+                }
+                const partner = partnerRecords[0];
+                if (!compareSync(password, partner.passwordHash)) {
+                    return redirect('/login?message=Invalid credentials');
+                }
+                const token = await signToken({ id: partner.id, username: partner.username, role: 'PARTNER', partnerId: partner.id });
+                const cookieStore = await cookies();
+                cookieStore.set('auth_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' });
             }
-
-            const user = userRecords[0];
-            const passwordMatch = compareSync(password, user.passwordHash);
-
-            if (!passwordMatch) {
-                return redirect('/login?message=Invalid email or password');
-            }
-
-            const token = await signToken({ id: user.id, email: user.email, role: user.role });
-
-            const cookieStore = await cookies();
-            cookieStore.set('auth_token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 60 * 60 * 24 * 7, // 1 week
-                path: '/',
-            });
         } catch (err: any) {
-            // If it's a redirect error thrown by Next.js, let it propagate
             if (err?.message === 'NEXT_REDIRECT') throw err;
             console.error('Login error:', err);
-            return redirect(`/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`);
+            return redirect('/login?message=Authentication+failed');
         }
 
         return redirect('/');
@@ -78,17 +78,16 @@ export default async function LoginPage({
                     <form className="space-y-6" action={signIn}>
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                                Email address
+                                Email or Username
                             </label>
                             <div className="mt-2">
                                 <input
                                     id="email"
                                     name="email"
-                                    type="email"
-                                    autoComplete="email"
+                                    type="text"
                                     required
                                     className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:border-[#143d30] focus:outline-none focus:ring-1 focus:ring-[#143d30] shadow-sm text-sm"
-                                    placeholder="admin@kl01carspa.com"
+                                    placeholder="admin@kl01carspa.com or username"
                                 />
                             </div>
                         </div>

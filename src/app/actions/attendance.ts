@@ -1,8 +1,9 @@
 'use server';
 
 import { attendance, salaryAdvances, employees } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { getAuthSession } from '@/utils/auth';
 import { drizzle } from 'drizzle-orm/d1';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
@@ -14,11 +15,21 @@ function getEdgeDb() {
     return drizzle(dbBinding);
 }
 
-export async function getDailyAttendance(dateString: string) {
-    try {
-        const db = getEdgeDb();
-        const activeStaff = await db.select().from(employees).where(eq(employees.status, 'ACTIVE'));
-        const attendanceRecords = await db.select().from(attendance).where(eq(attendance.date, dateString));
+    export async function getDailyAttendance(dateString: string) {
+        try {
+            const db = getEdgeDb();
+            const session = await getAuthSession();
+            const partnerId = session?.partnerId || null;
+            
+            let staffQuery = db.select().from(employees).where(eq(employees.status, 'ACTIVE'));
+            if (partnerId) {
+                staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), eq(employees.partnerId, partnerId))) as any;
+            } else {
+                staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), isNull(employees.partnerId))) as any;
+            }
+            
+            const activeStaff = await staffQuery;
+            const attendanceRecords = await db.select().from(attendance).where(eq(attendance.date, dateString));
         const advanceRecords = await db.select().from(salaryAdvances).where(eq(salaryAdvances.datePaid, dateString));
 
         return activeStaff.map((emp) => {
@@ -38,20 +49,23 @@ export async function getDailyAttendance(dateString: string) {
     }
 }
 
-export async function saveAttendanceRecord(data: { employeeId: string; date: string; status: 'PRESENT' | 'ABSENT' | 'HALF_DAY'; isLate: boolean; overtimeHours: number; notes?: string; }) {
+export async function saveAttendanceRecord(data: { employeeId: string; date: string; status: 'PRESENT' | 'ABSENT' | 'HALF_DAY'; isLate: boolean; lateDeduction: number; overtimePay: number; notes?: string; }) {
     try {
         const db = getEdgeDb();
         const existing = await db.select().from(attendance).where(and(eq(attendance.employeeId, data.employeeId), eq(attendance.date, data.date)));
 
+        const ts = new Date().toISOString();
+
         if (existing.length > 0) {
-            await db.update(attendance).set({ status: data.status, isLate: data.isLate, overtimeHours: data.overtimeHours, notes: data.notes || '' }).where(eq(attendance.id, existing[0].id));
+            await db.update(attendance).set({ status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts }).where(eq(attendance.id, existing[0].id));
         } else {
-            await db.insert(attendance).values({ id: crypto.randomUUID(), employeeId: data.employeeId, date: data.date, status: data.status, isLate: data.isLate, overtimeHours: data.overtimeHours, notes: data.notes || '' });
+            await db.insert(attendance).values({ id: crypto.randomUUID(), employeeId: data.employeeId, date: data.date, status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts });
         }
         revalidatePath('/attendance');
         return { success: true };
-    } catch (err) {
-        return { success: false, error: 'Database update failed.' };
+    } catch (err: any) {
+        console.error('saveAttendanceRecord Error:', err);
+        return { success: false, error: err.message || 'Database update failed.' };
     }
 }
 

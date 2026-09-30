@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { getMonthlySalaryReport } from '@/app/actions/salary';
+import { useRouter } from 'next/navigation';
+import { Printer } from 'lucide-react';
 
 export default function SalaryPage() {
     // Default to current month (YYYY-MM format)
     const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
     const [report, setReport] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const loadReport = async () => {
@@ -26,17 +29,25 @@ export default function SalaryPage() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Final Salary Calculation</h1>
-                    <p className="text-sm text-gray-500 mt-1">Automated monthly payroll sheet based on attendance and advances.</p>
+                    <p className="text-sm text-gray-500 mt-1 print:hidden">Automated monthly payroll sheet based on attendance and advances.</p>
                 </div>
 
-                <div className="flex flex-col">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Select Month</label>
-                    <input
-                        type="month"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
-                    />
+                <div className="flex gap-4 items-end print:hidden">
+                    <div className="flex flex-col">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Select Month</label>
+                        <input
+                            type="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => window.print()}
+                        className="bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2 h-[42px]"
+                    >
+                        <Printer className="w-4 h-4" /> Print
+                    </button>
                 </div>
             </div>
 
@@ -49,8 +60,8 @@ export default function SalaryPage() {
                                 <th className="p-5">Employee</th>
                                 <th className="p-5">Daily Rate</th>
                                 <th className="p-5">Present / Half Days</th>
-                                <th className="p-5">Overtime Pay</th>
-                                <th className="p-5 text-rose-600">Advances Deducted</th>
+                                <th className="p-5 text-emerald-600">Overtime Pay</th>
+                                <th className="p-5 text-rose-600">Advances & Fines</th>
                                 <th className="p-5 text-right text-[#143d30]">Net Payable</th>
                             </tr>
                         </thead>
@@ -65,9 +76,13 @@ export default function SalaryPage() {
                                 </tr>
                             ) : (
                                 report.map(({ employee, stats }) => (
-                                    <tr key={employee.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr 
+                                        key={employee.id}
+                                        onClick={() => router.push(`/salary/${employee.id}?month=${selectedMonth}`)}
+                                        className="hover:bg-gray-50/80 transition-colors cursor-pointer group"
+                                    >
                                         <td className="p-5">
-                                            <div className="font-semibold text-gray-900">{employee.name}</div>
+                                            <div className="font-semibold text-gray-900 group-hover:text-[#143d30] transition-colors">{employee.name}</div>
                                             <div className="text-xs text-gray-500 mt-0.5">{employee.position}</div>
                                         </td>
                                         <td className="p-5 font-medium text-gray-600">₹{employee.dailySalary}</td>
@@ -76,11 +91,11 @@ export default function SalaryPage() {
                                             <div className="text-xs text-gray-500 mt-0.5">Base: ₹{stats.basePay.toFixed(2)}</div>
                                         </td>
                                         <td className="p-5">
-                                            <div className="font-medium text-gray-900">{stats.totalOvertimeHours} Hrs</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">₹{stats.overtimePay.toFixed(2)}</div>
+                                            <div className="font-medium text-emerald-600">₹{stats.totalOvertimePay.toFixed(2)}</div>
                                         </td>
                                         <td className="p-5 text-rose-600 font-medium">
-                                            - ₹{stats.totalAdvances.toFixed(2)}
+                                            <div className="text-sm">- ₹{stats.totalDeductions.toFixed(2)}</div>
+                                            <div className="text-[10px] text-gray-500 mt-0.5">Adv: ₹{stats.totalAdvances} | Late: ₹{stats.totalLateDeductions}</div>
                                         </td>
                                         <td className="p-5 text-right">
                                             <span className="inline-flex items-center justify-center bg-[#E2F898]/40 text-[#143d30] px-3 py-1.5 rounded-lg text-base font-bold border border-[#E2F898]">

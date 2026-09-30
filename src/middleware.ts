@@ -8,13 +8,18 @@ export async function middleware(request: NextRequest) {
     const user = await verifyToken(token);
 
     // Protect all internal CRM routes
-    const protectedRoutes = ['/', '/employees', '/attendance', '/salary'];
+    const protectedRoutes = ['/', '/employees', '/attendance', '/salary', '/billing', '/partners'];
     const isProtectedRoute = protectedRoutes.some(route =>
         request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
     );
 
     if (isProtectedRoute && !user) {
         return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // Block partners from accessing the partners management page
+    if (request.nextUrl.pathname.startsWith('/partners') && user?.role === 'PARTNER') {
+        return NextResponse.redirect(new URL('/', request.url));
     }
 
     // Redirect authenticated users away from the login page

@@ -22,3 +22,11 @@ export async function verifyToken(token: string | undefined = '') {
         return null;
     }
 }
+
+import { cookies } from 'next/headers';
+
+export async function getAuthSession() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+    return await verifyToken(token);
+}

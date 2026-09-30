@@ -1,21 +1,50 @@
 import Link from 'next/link';
 import { Search, Bell, Plus, TrendingUp, Calendar, Banknote, Loader2 } from 'lucide-react';
 import { getDb } from '@/db';
-import { employees, salaryAdvances } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { employees, salaryAdvances, billing } from '@/db/schema';
+import { eq, sql, isNull, and, inArray, like } from 'drizzle-orm';
 import { Suspense } from 'react';
+import { getAuthSession } from '@/utils/auth';
 
 export const runtime = 'edge';
 
 async function DashboardMetrics() {
   const db = getDb();
+  const session = await getAuthSession();
+  const partnerId = session?.partnerId || null;
 
-  // Fetch real data from D1
-  const staffQuery = await db.select({ count: sql<number>`count(*)` }).from(employees).where(eq(employees.status, 'ACTIVE'));
-  const totalStaff = staffQuery[0]?.count || 0;
+  // Filter employees by partner
+  let staffQueryBase = db.select().from(employees);
+  if (partnerId) {
+    staffQueryBase = staffQueryBase.where(eq(employees.partnerId, partnerId)) as any;
+  } else {
+    staffQueryBase = staffQueryBase.where(isNull(employees.partnerId)) as any;
+  }
+  const allStaff = await staffQueryBase;
+  const staffIds = allStaff.map(s => s.id);
 
-  const advanceQuery = await db.select({ total: sql<number>`sum(${salaryAdvances.amount})` }).from(salaryAdvances);
-  const pendingAdvances = advanceQuery[0]?.total || 0;
+  const totalStaff = allStaff.filter(s => s.status === 'ACTIVE').length;
+
+  let pendingAdvances = 0;
+  if (staffIds.length > 0) {
+    const advanceQuery = await db.select({ total: sql<number>`sum(${salaryAdvances.amount})` })
+      .from(salaryAdvances)
+      .where(inArray(salaryAdvances.employeeId, staffIds));
+    pendingAdvances = advanceQuery[0]?.total || 0;
+  }
+
+  // Calculate today's revenue and jobs
+  const todayString = new Date().toISOString().split('T')[0];
+  let billingQuery = db.select().from(billing).where(like(billing.date, `${todayString}%`));
+  if (partnerId) {
+    billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), eq(billing.partnerId, partnerId))) as any;
+  } else {
+    billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), isNull(billing.partnerId))) as any;
+  }
+  
+  const todayBills = await billingQuery;
+  const jobsToday = todayBills.length;
+  const revenueToday = todayBills.reduce((sum, b) => sum + b.amount, 0);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
@@ -30,15 +59,15 @@ async function DashboardMetrics() {
       <div className="sm:px-4 pt-4 sm:pt-0">
         <div className="text-sm text-gray-500 mb-2">Jobs Today</div>
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">0</span>
-          <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1 mb-1">No data</span>
+          <span className="text-3xl font-bold text-gray-900">{jobsToday}</span>
+          {jobsToday === 0 && <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1 mb-1">No data</span>}
         </div>
       </div>
 
       <div className="sm:px-4 pt-4 sm:pt-0">
         <div className="text-sm text-gray-500 mb-2">Today's Revenue</div>
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">₹0</span>
+          <span className="text-3xl font-bold text-gray-900">₹{revenueToday}</span>
         </div>
       </div>
 
