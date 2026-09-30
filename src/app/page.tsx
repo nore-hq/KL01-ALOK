@@ -16,7 +16,7 @@ async function DashboardMetrics() {
   // Filter employees by partner
   let staffQueryBase = db.select().from(employees);
   if (partnerId) {
-    staffQueryBase = staffQueryBase.where(eq(employees.partnerId, partnerId)) as any;
+    staffQueryBase = staffQueryBase.where(eq(employees.partnerId, partnerId as string)) as any;
   } else {
     staffQueryBase = staffQueryBase.where(isNull(employees.partnerId)) as any;
   }
@@ -37,7 +37,7 @@ async function DashboardMetrics() {
   const todayString = new Date().toISOString().split('T')[0];
   let billingQuery = db.select().from(billing).where(like(billing.date, `${todayString}%`));
   if (partnerId) {
-    billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), eq(billing.partnerId, partnerId))) as any;
+    billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), eq(billing.partnerId, partnerId as string))) as any;
   } else {
     billingQuery = billingQuery.where(and(like(billing.date, `${todayString}%`), isNull(billing.partnerId))) as any;
   }

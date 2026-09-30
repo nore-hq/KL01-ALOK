@@ -23,7 +23,7 @@ function getEdgeDb() {
             
             let staffQuery = db.select().from(employees);
             if (partnerId) {
-                staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), eq(employees.partnerId, partnerId))) as any;
+                staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), eq(employees.partnerId, partnerId as string))) as any;
             } else {
                 staffQuery = staffQuery.where(and(eq(employees.status, 'ACTIVE'), isNull(employees.partnerId))) as any;
             }

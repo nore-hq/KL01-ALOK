@@ -29,7 +29,7 @@ export async function getEmployees() {
         const partnerId = session?.partnerId || null;
 
         if (partnerId) {
-            return await db.select().from(employees).where(eq(employees.partnerId, partnerId));
+            return await db.select().from(employees).where(eq(employees.partnerId, partnerId as string));
         } else {
             return await db.select().from(employees).where(isNull(employees.partnerId));
         }

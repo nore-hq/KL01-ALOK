@@ -23,7 +23,7 @@ export async function getBills() {
 
         let query = db.select().from(billing);
         if (partnerId) {
-            query = query.where(eq(billing.partnerId, partnerId)) as any;
+            query = query.where(eq(billing.partnerId, partnerId as string)) as any;
         } else {
             query = query.where(isNull(billing.partnerId)) as any;
         }
@@ -44,7 +44,7 @@ export async function getUniqueCustomers() {
 
         let query = db.selectDistinct({ customerName: billing.customerName }).from(billing);
         if (partnerId) {
-            query = query.where(eq(billing.partnerId, partnerId)) as any;
+            query = query.where(eq(billing.partnerId, partnerId as string)) as any;
         } else {
             query = query.where(isNull(billing.partnerId)) as any;
         }
@@ -65,7 +65,7 @@ export async function getUniquePaymentModes() {
 
         let query = db.selectDistinct({ paymentMode: billing.paymentMode }).from(billing);
         if (partnerId) {
-            query = query.where(eq(billing.partnerId, partnerId)) as any;
+            query = query.where(eq(billing.partnerId, partnerId as string)) as any;
         } else {
             query = query.where(isNull(billing.partnerId)) as any;
         }
@@ -95,7 +95,7 @@ export async function createBill(data: {
         // Get the latest serial number to increment it (per partner if needed, but doing globally or per partner depends. Let's do per partner)
         let latestQuery = db.select({ maxSerial: sql`MAX(serial_number)` }).from(billing);
         if (partnerId) {
-            latestQuery = latestQuery.where(eq(billing.partnerId, partnerId)) as any;
+            latestQuery = latestQuery.where(eq(billing.partnerId, partnerId as string)) as any;
         } else {
             latestQuery = latestQuery.where(isNull(billing.partnerId)) as any;
         }
