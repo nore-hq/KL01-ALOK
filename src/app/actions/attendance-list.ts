@@ -1,6 +1,6 @@
 'use server';
 
-import { attendance, employees } from '@/db/schema';
+import { attendance, employees, salaryAdvances } from '@/db/schema';
 import { eq, and, gte, lte, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { getRequestContext } from '@cloudflare/next-on-pages';
@@ -31,12 +31,38 @@ function getEdgeDb() {
         
         const records = await db.select().from(attendance)
             .where(and(gte(attendance.date, startDate), lte(attendance.date, endDate)));
+            
+        const advances = await db.select().from(salaryAdvances)
+            .where(and(gte(salaryAdvances.datePaid, startDate), lte(salaryAdvances.datePaid, endDate)));
 
         return activeStaff.map(emp => {
             const empRecords = records.filter(r => r.employeeId === emp.id);
+            const empAdvances = advances.filter(a => a.employeeId === emp.id);
+            
+            // Merge advances into records by date for easy UI rendering
+            const mergedRecords = empRecords.map(r => {
+                const dayAdvances = empAdvances.filter(a => a.datePaid === r.date);
+                const totalAdvance = dayAdvances.reduce((sum, a) => sum + a.amount, 0);
+                return { ...r, advanceAmount: totalAdvance };
+            });
+            
+            // Also add standalone advances for days where attendance wasn't marked
+            empAdvances.forEach(adv => {
+                if (!mergedRecords.find(r => r.date === adv.datePaid)) {
+                    mergedRecords.push({
+                        date: adv.datePaid,
+                        status: 'UNMARKED',
+                        isLate: false,
+                        lateDeduction: 0,
+                        overtimePay: 0,
+                        advanceAmount: adv.amount
+                    } as any);
+                }
+            });
+
             return {
                 employee: emp,
-                records: empRecords
+                records: mergedRecords
             };
         });
     } catch (err) {

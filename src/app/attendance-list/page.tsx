@@ -12,7 +12,11 @@ export default function AttendanceListPage() {
         return new Date(d.setDate(diff));
     };
 
-    const [weekStart, setWeekStart] = useState<Date>(getMonday(new Date()));
+    const [selectedDateStr, setSelectedDateStr] = useState<string>(new Date().toISOString().split('T')[0]);
+    
+    // Derive weekStart dynamically from the selected date string
+    const weekStart = getMonday(new Date(selectedDateStr));
+    
     const [report, setReport] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -37,18 +41,18 @@ export default function AttendanceListPage() {
             setLoading(false);
         };
         loadReport();
-    }, [weekStart]);
+    }, [weekStart.toISOString().split('T')[0]]); // Refetch only when the derived Monday changes
 
     const handlePrevWeek = () => {
-        const newStart = new Date(weekStart);
-        newStart.setDate(weekStart.getDate() - 7);
-        setWeekStart(newStart);
+        const current = new Date(selectedDateStr);
+        current.setDate(current.getDate() - 7);
+        setSelectedDateStr(current.toISOString().split('T')[0]);
     };
 
     const handleNextWeek = () => {
-        const newStart = new Date(weekStart);
-        newStart.setDate(weekStart.getDate() + 7);
-        setWeekStart(newStart);
+        const current = new Date(selectedDateStr);
+        current.setDate(current.getDate() + 7);
+        setSelectedDateStr(current.toISOString().split('T')[0]);
     };
 
     const filteredReport = report.filter(({ employee }) =>
@@ -79,10 +83,10 @@ export default function AttendanceListPage() {
                     <input
                         type="date"
                         className="text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 print:hidden cursor-pointer"
-                        value={weekStart.toISOString().split('T')[0]}
+                        value={selectedDateStr}
                         onChange={(e) => {
                             if (e.target.value) {
-                                setWeekStart(getMonday(new Date(e.target.value)));
+                                setSelectedDateStr(e.target.value);
                             }
                         }}
                     />
@@ -154,6 +158,7 @@ export default function AttendanceListPage() {
                                                             {getStatusIndicator(record.status, record.isLate)}
                                                             {record.overtimePay > 0 && <span className="text-[10px] text-emerald-600 font-medium">OT: ₹{record.overtimePay}</span>}
                                                             {record.lateDeduction > 0 && <span className="text-[10px] text-red-500 font-medium">Fine: ₹{record.lateDeduction}</span>}
+                                                            {record.advanceAmount > 0 && <span className="text-[10px] text-amber-600 font-medium">Adv: ₹{record.advanceAmount}</span>}
                                                         </div>
                                                     ) : (
                                                         <span className="text-gray-300">-</span>

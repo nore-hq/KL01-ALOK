@@ -116,7 +116,7 @@ export async function createBill(data: {
             date: data.date,
             createdAt: new Date().toISOString(),
             partnerId: partnerId as string | null
-        });
+        }).run();
 
         revalidatePath('/billing');
         revalidatePath('/billing/listing');
@@ -130,7 +130,7 @@ export async function createBill(data: {
 export async function deleteBill(id: string) {
     try {
         const db = getEdgeDb();
-        await db.delete(billing).where(eq(billing.id, id));
+        await db.delete(billing).where(eq(billing.id, id)).run();
         revalidatePath('/billing');
         revalidatePath('/billing/listing');
         return { success: true };
@@ -150,7 +150,7 @@ export async function updateBill(id: string, data: Partial<{
 }>) {
     try {
         const db = getEdgeDb();
-        await db.update(billing).set(data).where(eq(billing.id, id));
+        await db.update(billing).set(data).where(eq(billing.id, id)).run();
         revalidatePath('/billing');
         revalidatePath('/billing/listing');
         return { success: true };

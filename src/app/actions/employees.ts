@@ -65,7 +65,7 @@ export async function createEmployee(formData: FormData) {
             status: 'ACTIVE',
             createdAt: new Date().toISOString(),
             partnerId: partnerId as string | null,
-        });
+        }).run();
 
         revalidatePath('/employees');
         return { success: true };
@@ -94,7 +94,7 @@ export async function updateEmployee(id: string, formData: FormData) {
             phone,
             position,
             dailySalary,
-        }).where(eq(employees.id, id));
+        }).where(eq(employees.id, id)).run();
 
         revalidatePath('/employees');
         return { success: true };
@@ -109,10 +109,10 @@ export async function deleteEmployee(id: string) {
     try {
         const db = getEdgeDb();
         // First delete related records to avoid foreign key constraints
-        await db.delete(attendance).where(eq(attendance.employeeId, id));
-        await db.delete(salaryAdvances).where(eq(salaryAdvances.employeeId, id));
+        await db.delete(attendance).where(eq(attendance.employeeId, id)).run();
+        await db.delete(salaryAdvances).where(eq(salaryAdvances.employeeId, id)).run();
         // Finally, delete the employee
-        await db.delete(employees).where(eq(employees.id, id));
+        await db.delete(employees).where(eq(employees.id, id)).run();
         
         revalidatePath('/employees');
         return { success: true };

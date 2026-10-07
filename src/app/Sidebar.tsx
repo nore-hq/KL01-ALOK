@@ -1,11 +1,26 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, Calendar, Banknote, Receipt, FileText } from "lucide-react";
+import { Home, Users, Calendar, Banknote, Receipt, FileText, LogOut, Loader2 } from "lucide-react";
+import { logoutAction } from "@/app/actions/auth";
 
 export default function Sidebar({ session }: { session?: any }) {
     const pathname = usePathname();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        try {
+            await logoutAction();
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/login';
+        }
+    };
 
     // 1. Hide the sidebar completely if we are on the login page
     if (pathname === '/login') {
@@ -115,14 +130,35 @@ export default function Sidebar({ session }: { session?: any }) {
                 </nav>
             </div>
 
-            <div className="pt-4 flex items-center gap-3 border-t border-gray-100">
-                <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${session?.username || 'Admin'}`} alt="avatar" />
+            <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                <div className="flex items-center gap-3 px-1">
+                    <div className="h-9 w-9 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                        <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${session?.username || 'Admin'}`} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-gray-900 truncate">{session?.username || 'System Admin'}</div>
+                        <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{session?.role === 'PARTNER' ? 'Contract Showroom' : 'Main Branch'}</div>
+                    </div>
                 </div>
-                <div>
-                    <div className="text-xs font-semibold text-gray-900 line-clamp-1">{session?.username || 'System Admin'}</div>
-                    <div className="text-[10px] text-gray-500 uppercase">{session?.role === 'PARTNER' ? 'Contract Showroom' : 'Main Branch'}</div>
-                </div>
+
+                <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50/70 hover:bg-rose-100 hover:text-rose-700 active:bg-rose-200 border border-rose-200/50 transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-sm group"
+                    title="Sign Out"
+                >
+                    {isLoggingOut ? (
+                        <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                            <span>Signing Out...</span>
+                        </>
+                    ) : (
+                        <>
+                            <LogOut className="w-3.5 h-3.5 text-rose-500 group-hover:-translate-x-0.5 transition-transform" />
+                            <span>Sign Out</span>
+                        </>
+                    )}
+                </button>
             </div>
         </aside>
     );

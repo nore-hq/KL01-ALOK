@@ -57,9 +57,9 @@ export async function saveAttendanceRecord(data: { employeeId: string; date: str
         const ts = new Date().toISOString();
 
         if (existing.length > 0) {
-            await db.update(attendance).set({ status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts }).where(eq(attendance.id, existing[0].id));
+            await db.update(attendance).set({ status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts }).where(eq(attendance.id, existing[0].id)).run();
         } else {
-            await db.insert(attendance).values({ id: crypto.randomUUID(), employeeId: data.employeeId, date: data.date, status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts });
+            await db.insert(attendance).values({ id: crypto.randomUUID(), employeeId: data.employeeId, date: data.date, status: data.status, isLate: data.isLate, lateDeduction: data.lateDeduction, overtimePay: data.overtimePay, notes: data.notes || '', timestamp: ts }).run();
         }
         revalidatePath('/attendance');
         return { success: true };
@@ -72,7 +72,7 @@ export async function saveAttendanceRecord(data: { employeeId: string; date: str
 export async function recordSalaryAdvance(data: { employeeId: string; amount: number; datePaid: string; notes?: string; }) {
     try {
         const db = getEdgeDb();
-        await db.insert(salaryAdvances).values({ id: crypto.randomUUID(), employeeId: data.employeeId, amount: data.amount, datePaid: data.datePaid, notes: data.notes || 'Cash Advance' });
+        await db.insert(salaryAdvances).values({ id: crypto.randomUUID(), employeeId: data.employeeId, amount: data.amount, datePaid: data.datePaid, notes: data.notes || 'Cash Advance' }).run();
         revalidatePath('/attendance');
         return { success: true };
     } catch (err) {
