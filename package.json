@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:cf": "npx @cloudflare/next-on-pages",
-    "deploy": "npm run build:cf && npx wrangler pages deploy .vercel/output/static --project-name car-spa-crm",
+    "deploy": "npm run build:cf && npx wrangler pages deploy .vercel/output/static --project-name kl01-alok",
     "start": "next start",
     "lint": "eslint"
   },

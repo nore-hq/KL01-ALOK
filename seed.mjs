@@ -1,8 +1,8 @@
 import { hashSync } from 'bcrypt-ts';
 import fs from 'fs';
 
-const email = 'kl01@gmail.com';
-const password = 'kl01admin@123';
+const email = 'adminkl@kl.com';
+const password = 'kladmin666';
 const id = 'user_' + Date.now();
 const role = 'ADMIN';
 const createdAt = new Date().toISOString();

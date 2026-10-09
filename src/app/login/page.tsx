@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { redirect } from 'next/navigation';
-import { getDb } from '@/db';
+import { getDb, ensureDbInitialized } from '@/db';
 import { users, partners } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { signToken } from '@/utils/auth';
@@ -17,10 +17,11 @@ export default async function LoginPage({
 
     const signIn = async (formData: FormData) => {
         'use server';
-        const emailOrUsername = formData.get('email') as string;
-        const password = formData.get('password') as string;
+        const emailOrUsername = (formData.get('email') as string || '').trim().toLowerCase();
+        const password = formData.get('password') as string || '';
 
         try {
+            await ensureDbInitialized();
             const db = getDb();
             const userRecords = await db.select().from(users).where(eq(users.email, emailOrUsername));
 
@@ -48,7 +49,10 @@ export default async function LoginPage({
         } catch (err: any) {
             if (err?.message === 'NEXT_REDIRECT') throw err;
             console.error('Login error:', err);
-            return redirect('/login?message=Authentication+failed');
+            const msg = err?.message?.includes('D1 Binding')
+                ? 'Cloudflare D1 "DB" binding not found in Pages dashboard settings'
+                : 'Authentication failed. Please check credentials or DB configuration.';
+            return redirect(`/login?message=${encodeURIComponent(msg)}`);
         }
 
         return redirect('/');
@@ -87,7 +91,7 @@ export default async function LoginPage({
                                     type="text"
                                     required
                                     className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:border-[#143d30] focus:outline-none focus:ring-1 focus:ring-[#143d30] shadow-sm text-sm"
-                                    placeholder="admin@kl01carspa.com or username"
+                                    placeholder="adminkl@kl.com or username"
                                 />
                             </div>
                         </div>

@@ -1,1 +1,1 @@
-INSERT INTO users (id, email, password_hash, role, created_at) VALUES ('user_1790339224623', 'kl01@gmail.com', '$2b$10$1U3PCPWpGP7unk5/Fyafy.NMd.nHTuEqUC/JsiEJHa6C12d8uncBi', 'ADMIN', '2026-09-25T12:27:04.623Z');
+INSERT INTO users (id, email, password_hash, role, created_at) VALUES ('user_1791552622465', 'adminkl@kl.com', '$2b$10$264mx1okYobSqYYOY1hQgevT0hApB4ILXlQLTS2kRY3tJ2Bu1JlU6', 'ADMIN', '2026-10-09T13:30:22.465Z');
