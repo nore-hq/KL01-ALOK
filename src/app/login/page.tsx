@@ -59,7 +59,7 @@ export default async function LoginPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#F7F9FA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen bg-[#F7F9FA] flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
                 <div className="h-14 w-14 rounded-2xl bg-[#143d30] flex items-center justify-center font-black text-white text-xl shadow-lg mb-4">
                     KL

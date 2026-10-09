@@ -80,21 +80,21 @@ export default function EmployeesPage() {
         <div className="max-w-6xl mx-auto space-y-8">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Staff Roster</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage employee profiles and daily compensation.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Staff Roster</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Manage employee profiles and daily compensation.</p>
                 </div>
                 <button
                     onClick={() => { setEditEmp(null); setIsOpen(true); }}
-                    className="bg-[#143d30] hover:bg-[#1a4f3f] text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2"
+                    className="w-full sm:w-auto justify-center bg-[#143d30] hover:bg-[#1a4f3f] text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" /> Add Staff
                 </button>
             </div>
 
             {/* Filter / Search Bar */}
-            <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 p-2 rounded-xl shadow-[2px_2px_16px_rgba(0,0,0,0.01)]">
+            <div className="flex items-center justify-between gap-3 bg-white border border-gray-200 p-2 rounded-xl shadow-sm">
                 <div className="relative w-full max-w-sm">
                     <input
                         type="text"
@@ -105,15 +105,15 @@ export default function EmployeesPage() {
                     />
                     <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
                 </div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 pr-4">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 pr-2 shrink-0">
                     {filteredStaff.length} Records
                 </div>
             </div>
 
             {/* Light Theme Data Table */}
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-700">
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
+                    <table className="w-full text-left text-sm text-gray-700 whitespace-nowrap sm:whitespace-normal">
                         <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500 border-b border-gray-200 font-semibold">
                             <tr>
                                 <th className="p-4 pl-6">Employee Details</th>

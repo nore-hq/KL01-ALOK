@@ -26,25 +26,25 @@ export default function SalaryPage() {
         <div className="space-y-8">
 
             {/* Header & Month Selector */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Final Salary Calculation</h1>
-                    <p className="text-sm text-gray-500 mt-1 print:hidden">Automated monthly payroll sheet based on attendance and advances.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Final Salary Calculation</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 print:hidden">Automated monthly payroll sheet based on attendance and advances.</p>
                 </div>
 
-                <div className="flex gap-4 items-end print:hidden">
-                    <div className="flex flex-col">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full sm:w-auto print:hidden">
+                    <div className="flex flex-col w-full sm:w-auto">
                         <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Select Month</label>
                         <input
                             type="month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
+                            className="w-full sm:w-auto bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
                         />
                     </div>
                     <button 
                         onClick={() => window.print()}
-                        className="bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2 h-[42px]"
+                        className="w-full sm:w-auto justify-center bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2 h-[42px]"
                     >
                         <Printer className="w-4 h-4" /> Print
                     </button>
@@ -52,8 +52,8 @@ export default function SalaryPage() {
             </div>
 
             {/* Salary Ledger Table */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
                     <table className="w-full text-left text-sm text-gray-900 whitespace-nowrap">
                         <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-200">
                             <tr>

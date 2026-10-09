@@ -40,23 +40,23 @@ export default function PartnersPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Contract Showrooms</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage partner accounts and separate dashboard access.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Contract Showrooms</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Manage partner accounts and separate dashboard access.</p>
                 </div>
                 
                 <button
                     onClick={() => setIsCreating(!isCreating)}
-                    className="bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2"
+                    className="w-full sm:w-auto justify-center bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" /> {isCreating ? 'Cancel' : 'New Partner'}
                 </button>
             </div>
 
             {isCreating && (
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4">Create New Partner Account</h2>
+                <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Create New Partner Account</h2>
                     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Showroom Name</label>
@@ -107,8 +107,9 @@ export default function PartnersPage() {
                 </div>
             )}
 
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
-                <table className="w-full text-left text-sm text-gray-900">
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
+                    <table className="w-full text-left text-sm text-gray-900 whitespace-nowrap">
                     <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-200">
                         <tr>
                             <th className="p-5">Showroom Name</th>
@@ -152,6 +153,7 @@ export default function PartnersPage() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {editingPartner && (

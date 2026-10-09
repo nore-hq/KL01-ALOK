@@ -70,19 +70,19 @@ export default function AttendanceListPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Attendance List</h1>
-                    <p className="text-sm text-gray-500 mt-1 print:hidden">Weekly log sheet of all employee attendance.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Attendance List</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 print:hidden">Weekly log sheet of all employee attendance.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <button onClick={handlePrevWeek} className="print:hidden p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm transition-all">
+                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
+                    <button onClick={handlePrevWeek} className="print:hidden p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm transition-all" aria-label="Previous week">
                         <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <input
                         type="date"
-                        className="text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 print:hidden cursor-pointer"
+                        className="text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 print:hidden cursor-pointer flex-1 sm:flex-initial"
                         value={selectedDateStr}
                         onChange={(e) => {
                             if (e.target.value) {
@@ -93,13 +93,13 @@ export default function AttendanceListPage() {
                     <div className="hidden print:block text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm">
                         {weekDays[0].split('-').reverse().join('-')} - {weekDays[6].split('-').reverse().join('-')}
                     </div>
-                    <button onClick={handleNextWeek} className="print:hidden p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm transition-all">
+                    <button onClick={handleNextWeek} className="print:hidden p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm transition-all" aria-label="Next week">
                         <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 p-2 rounded-xl shadow-[2px_2px_16px_rgba(0,0,0,0.01)] print:hidden">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-gray-200 p-2 rounded-xl shadow-sm print:hidden">
                 <div className="relative w-full max-w-sm">
                     <input
                         type="text"
@@ -112,14 +112,14 @@ export default function AttendanceListPage() {
                 </div>
                 <button 
                     onClick={() => window.print()}
-                    className="bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2"
+                    className="w-full sm:w-auto justify-center bg-[#143d30] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#1a4f3f] transition-colors flex items-center gap-2"
                 >
                     <Printer className="w-4 h-4" /> Print
                 </button>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
                     <table className="w-full text-left text-sm text-gray-900 whitespace-nowrap">
                         <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-200">
                             <tr>

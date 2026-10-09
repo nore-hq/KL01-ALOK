@@ -47,35 +47,35 @@ async function DashboardMetrics() {
   const revenueToday = todayBills.reduce((sum, b) => sum + b.amount, 0);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-      <div className="sm:px-4 first:pl-0">
-        <div className="text-sm text-gray-500 mb-2">Total Staff</div>
-        <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">{totalStaff}</span>
-          <span className="text-[10px] font-bold bg-[#E2F898] text-[#143d30] px-2 py-0.5 rounded flex items-center gap-1 mb-1"><Plus className="w-3 h-3" /> Active</span>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 sm:divide-x divide-gray-100">
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 first:pl-0 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Total Staff</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-gray-900">{totalStaff}</span>
+          <span className="text-[10px] font-bold bg-[#E2F898] text-[#143d30] px-1.5 sm:px-2 py-0.5 rounded flex items-center gap-0.5"><Plus className="w-2.5 h-2.5" /> Active</span>
         </div>
       </div>
 
-      <div className="sm:px-4 pt-4 sm:pt-0">
-        <div className="text-sm text-gray-500 mb-2">Jobs Today</div>
-        <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">{jobsToday}</span>
-          {jobsToday === 0 && <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1 mb-1">No data</span>}
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Jobs Today</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-gray-900">{jobsToday}</span>
+          {jobsToday === 0 && <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded">No data</span>}
         </div>
       </div>
 
-      <div className="sm:px-4 pt-4 sm:pt-0">
-        <div className="text-sm text-gray-500 mb-2">Today's Revenue</div>
-        <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">₹{revenueToday}</span>
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Today's Revenue</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-gray-900">₹{revenueToday}</span>
         </div>
       </div>
 
-      <div className="sm:px-4 pt-4 sm:pt-0">
-        <div className="text-sm text-gray-500 mb-2">Pending Advances</div>
-        <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-gray-900">₹{pendingAdvances}</span>
-          <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded flex items-center mb-1">Unsettled</span>
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Pending Advances</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-gray-900">₹{pendingAdvances}</span>
+          <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 sm:px-2 py-0.5 rounded">Unsettled</span>
         </div>
       </div>
     </div>
@@ -93,32 +93,32 @@ function MetricsSkeleton() {
 
 export default function DashboardPage() {
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
 
       {/* Top Search & Profile Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <div className="relative w-full max-w-md">
           <input
             type="text"
             placeholder="Search CRM..."
-            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 text-gray-900 placeholder-gray-400"
+            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 text-gray-900 placeholder-gray-400 shadow-sm"
           />
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
         </div>
-        <div className="flex items-center gap-3">
-          <button className="p-2.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 transition flex items-center justify-center">
+        <div className="flex items-center justify-end gap-3">
+          <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition flex items-center justify-center shadow-sm">
             <Bell className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Greeting & Primary Action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pt-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pt-1">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-500 mt-1 text-sm">Welcome back. Let's dive into today's operations.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 mt-0.5 sm:mt-1 text-xs sm:text-sm">Welcome back. Let's dive into today's operations.</p>
         </div>
-        <Link href="/employees" className="bg-[#143d30] hover:bg-[#1a4f3f] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2">
+        <Link href="/employees" className="w-full sm:w-auto justify-center bg-[#143d30] hover:bg-[#1a4f3f] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.2)] flex items-center gap-2">
           <Plus className="w-4 h-4" /> Manage Staff
         </Link>
       </div>

@@ -38,23 +38,23 @@ export default async function EmployeeProfile({ params }: { params: { id: string
             </Link>
 
             {/* Profile Header Card */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-[4px_4px_24px_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
-                    <div className="h-24 w-24 rounded-2xl bg-[#E2F898] text-[#143d30] flex items-center justify-center font-black text-4xl shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+                <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="h-16 w-16 sm:h-24 sm:w-24 rounded-2xl bg-[#E2F898] text-[#143d30] flex items-center justify-center font-black text-2xl sm:text-4xl shadow-sm shrink-0">
                         {employee.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{employee.name}</h1>
-                        <p className="text-gray-500 font-medium mt-1">{employee.position} • {employee.age} yrs old</p>
-                        <div className="mt-3 inline-flex px-3 py-1 text-[11px] font-bold rounded-full uppercase tracking-wider bg-green-100 text-green-700">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{employee.name}</h1>
+                        <p className="text-gray-500 font-medium text-xs sm:text-sm mt-0.5 sm:mt-1">{employee.position} • {employee.age} yrs old</p>
+                        <div className="mt-2 sm:mt-3 inline-flex px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold rounded-full uppercase tracking-wider bg-green-100 text-green-700">
                             {employee.status}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2 text-right">
-                    <div className="text-sm text-gray-500 font-medium">Daily Rate</div>
-                    <div className="text-3xl font-bold text-gray-900">₹{employee.dailySalary}</div>
+                <div className="flex flex-col gap-1 text-left md:text-right border-t md:border-t-0 pt-3 md:pt-0 w-full md:w-auto">
+                    <div className="text-xs sm:text-sm text-gray-500 font-medium">Daily Rate</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">₹{employee.dailySalary}</div>
                 </div>
             </div>
 
@@ -87,7 +87,7 @@ export default async function EmployeeProfile({ params }: { params: { id: string
                 {/* Quick Actions */}
                 <div className="md:col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-[4px_4px_24px_rgba(0,0,0,0.02)]">
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Management Actions</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <Link href="/attendance" className="group border border-gray-200 rounded-xl p-4 hover:border-[#143d30]/30 hover:bg-gray-50 transition-all">
                             <div className="text-xl mb-2">
                                 <Calendar className="w-6 h-6 text-[#143d30]" />

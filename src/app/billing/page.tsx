@@ -81,10 +81,10 @@ export default function BillingPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Billing System</h1>
-                    <p className="text-sm text-gray-500 mt-1">Add new bills directly into the ledger.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Billing System</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Add new bills directly into the ledger.</p>
                 </div>
                 <div className="relative w-full max-w-sm">
                     <input
@@ -92,14 +92,123 @@ export default function BillingPage() {
                         placeholder="Search bills by name, vehicle, or ID..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
+                        className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
                     />
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="overflow-x-auto">
+            {/* Mobile-Friendly Bill Entry Form (Shown on small screens) */}
+            <div className="block md:hidden bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                    <span className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-[#143d30]" /> New Bill Entry
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-medium">Quick Add</span>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Date</label>
+                            <input
+                                type="date"
+                                required
+                                value={formData.date}
+                                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Amount (₹)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                required
+                                placeholder="0.00"
+                                value={formData.amount}
+                                onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Customer Name</label>
+                        <input
+                            type="text"
+                            required
+                            placeholder="Customer name..."
+                            value={formData.customerName}
+                            onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Vehicle No.</label>
+                            <input
+                                type="text"
+                                required
+                                placeholder="KL 01 AB 1234"
+                                value={formData.vehicleNumber}
+                                onChange={(e) => setFormData({...formData, vehicleNumber: e.target.value.toUpperCase()})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 uppercase focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Model</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Swift, Creta"
+                                value={formData.vehicleModel}
+                                onChange={(e) => setFormData({...formData, vehicleModel: e.target.value})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Service</label>
+                            <input
+                                type="text"
+                                required
+                                placeholder="Full Wash, Spa..."
+                                value={formData.serviceType}
+                                onChange={(e) => setFormData({...formData, serviceType: e.target.value})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase">Payment</label>
+                            <input
+                                type="text"
+                                required
+                                list="mobile-payment-list"
+                                placeholder="Cash, UPI..."
+                                value={formData.paymentMode}
+                                onChange={(e) => setFormData({...formData, paymentMode: e.target.value})}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                            />
+                            <datalist id="mobile-payment-list">
+                                {paymentModes.map((p, i) => <option key={i} value={p} />)}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-[#143d30] hover:bg-[#1a4f3f] disabled:bg-[#143d30]/50 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                        {isSubmitting ? 'Saving...' : <><Plus className="w-3.5 h-3.5" /> Submit Bill</>}
+                    </button>
+                </form>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
                     <form onSubmit={handleSubmit}>
                         <table className="w-full text-left text-sm text-gray-900 whitespace-nowrap min-w-[1200px]">
                             <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-200">
@@ -115,8 +224,8 @@ export default function BillingPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {/* Input Row */}
-                                <tr className="bg-[#E2F898]/10 hover:bg-[#E2F898]/20 transition-colors border-b-2 border-[#143d30]/10">
+                                {/* Desktop Inline Input Row */}
+                                <tr className="hidden md:table-row bg-[#E2F898]/10 hover:bg-[#E2F898]/20 transition-colors border-b-2 border-[#143d30]/10">
                                     <td className="p-3">
                                         <input
                                             type="date"

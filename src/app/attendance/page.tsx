@@ -103,20 +103,20 @@ export default function AttendancePage() {
     return (
         <div className="space-y-8">
             {/* Header & Date Selector */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Attendance</h1>
-                    <p className="text-sm text-gray-500 mt-1">Mark daily present status, late arrivals, overtime, and advances.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Attendance</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Mark daily present status, late arrivals, overtime, and advances.</p>
                 </div>
 
-                <div className="flex items-end gap-4">
-                    <div className="flex flex-col">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full sm:w-auto">
+                    <div className="flex flex-col w-full sm:w-auto">
                         <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Date</label>
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
+                            className="w-full sm:w-auto bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20 shadow-sm"
                         />
                     </div>
 
@@ -124,7 +124,7 @@ export default function AttendancePage() {
                         type="button"
                         onClick={handleEndOfDaySubmit}
                         disabled={!hasUnsavedChanges || isSubmitting}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.15)] flex items-center gap-2 ${hasUnsavedChanges && !isSubmitting
+                        className={`w-full sm:w-auto justify-center px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_20px_rgba(20,61,48,0.15)] flex items-center gap-2 ${hasUnsavedChanges && !isSubmitting
                                 ? 'bg-[#143d30] hover:bg-[#1a4f3f] text-white'
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                             }`}
@@ -135,7 +135,7 @@ export default function AttendancePage() {
             </div>
 
             {/* Filter / Search Bar */}
-            <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 p-2 rounded-xl shadow-[2px_2px_16px_rgba(0,0,0,0.01)]">
+            <div className="flex items-center justify-between gap-3 bg-white border border-gray-200 p-2 rounded-xl shadow-sm">
                 <div className="relative w-full max-w-sm">
                     <input
                         type="text"
@@ -146,15 +146,15 @@ export default function AttendancePage() {
                     />
                     <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
                 </div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 pr-4">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 pr-2 shrink-0">
                     {filteredRecords.length} Records
                 </div>
             </div>
 
             {/* Attendance Matrix Table */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-[4px_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-900">
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto -mx-3.5 sm:mx-0">
+                    <table className="w-full text-left text-sm text-gray-900 whitespace-nowrap">
                         <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-200">
                             <tr>
                                 <th className="p-5">Staff Name</th>

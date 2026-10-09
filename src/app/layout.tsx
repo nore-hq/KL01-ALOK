@@ -25,7 +25,7 @@ export default async function RootLayout({
         <Sidebar session={session} />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+        <main className="flex-1 p-3.5 sm:p-6 md:p-10 overflow-y-auto w-full min-w-0 max-w-full">
           {children}
         </main>
 
