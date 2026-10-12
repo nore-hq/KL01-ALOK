@@ -60,6 +60,15 @@ export default function AttendanceListPage() {
         employee.position.toLowerCase().includes(search.toLowerCase())
     );
 
+    const weekTotals = report.reduce((acc, curr) => {
+        curr.records?.forEach((r: any) => {
+            acc.overtime += (Number(r.overtimePay) || 0);
+            acc.lateDues += (Number(r.lateDeduction) || 0);
+            acc.advances += (Number(r.advanceAmount) || 0);
+        });
+        return acc;
+    }, { overtime: 0, lateDues: 0, advances: 0 });
+
     const getStatusIndicator = (status: string, isLate: boolean) => {
         if (status === 'PRESENT' && !isLate) return <span className="text-green-600 font-bold">P</span>;
         if (status === 'PRESENT' && isLate) return <span className="text-amber-500 font-bold">L</span>;
@@ -96,6 +105,27 @@ export default function AttendanceListPage() {
                     <button onClick={handleNextWeek} className="print:hidden p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm transition-all" aria-label="Next week">
                         <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
+                </div>
+            </div>
+
+            {/* Weekly KPI Overview Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Weekly Overtime Pay</div>
+                    <div className="text-xl font-bold text-emerald-700 mt-1">₹{weekTotals.overtime.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Total for this week</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Weekly Late Dues / Fines</div>
+                    <div className="text-xl font-bold text-amber-700 mt-1">₹{weekTotals.lateDues.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Deductions applied</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Weekly Cash Advances</div>
+                    <div className="text-xl font-bold text-rose-700 mt-1">₹{weekTotals.advances.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Total advances paid</div>
                 </div>
             </div>
 
@@ -174,12 +204,15 @@ export default function AttendanceListPage() {
                 </div>
             </div>
             
-            <div className="flex gap-4 text-xs text-gray-500 items-center pl-2">
+            <div className="flex flex-wrap gap-4 text-xs text-gray-500 items-center pl-2">
                 <strong>Legend:</strong>
                 <span className="flex items-center gap-1"><span className="text-green-600 font-bold">P</span> Present</span>
                 <span className="flex items-center gap-1"><span className="text-amber-500 font-bold">L</span> Late</span>
                 <span className="flex items-center gap-1"><span className="text-orange-500 font-bold">HD</span> Half Day</span>
                 <span className="flex items-center gap-1"><span className="text-red-500 font-bold">A</span> Absent</span>
+                <span className="flex items-center gap-1"><span className="text-emerald-600 font-semibold">OT:</span> Overtime</span>
+                <span className="flex items-center gap-1"><span className="text-red-500 font-semibold">Fine:</span> Late Due</span>
+                <span className="flex items-center gap-1"><span className="text-amber-600 font-semibold">Adv:</span> Cash Advance</span>
             </div>
         </div>
     );

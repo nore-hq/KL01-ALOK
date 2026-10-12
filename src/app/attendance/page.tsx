@@ -65,14 +65,23 @@ export default function AttendancePage() {
                     }));
                 }
 
-                // If it's not just an empty unmarked status, record attendance
-                if (!(data.status === 'UNMARKED' && !data.overtimePay && !data.lateDeduction)) {
-                    const finalStatus = data.status === 'UNMARKED' ? 'PRESENT' : data.status;
+                // If any attendance state was modified, or if an attendance record already existed
+                const shouldSaveAttendance = 
+                    (data.status && data.status !== 'UNMARKED') || 
+                    data.isLate || 
+                    (data.lateDeduction && data.lateDeduction > 0) || 
+                    (data.overtimePay && data.overtimePay > 0);
+
+                if (shouldSaveAttendance) {
+                    const finalStatus = (!data.status || data.status === 'UNMARKED') ? 'PRESENT' : data.status;
                     calls.push(saveAttendanceRecord({
                         employeeId,
                         date: selectedDate,
-                        ...data,
-                        status: finalStatus
+                        status: finalStatus,
+                        isLate: !!data.isLate,
+                        lateDeduction: Number(data.lateDeduction) || 0,
+                        overtimePay: Number(data.overtimePay) || 0,
+                        notes: data.notes || '',
                     }));
                 }
                 
@@ -91,8 +100,19 @@ export default function AttendancePage() {
         }
     };
 
-
     const hasUnsavedChanges = Object.keys(pendingChanges).length > 0;
+
+    const summaryStats = records.reduce((acc, curr) => {
+        const state = getAttendanceState(curr.employee.id, curr.attendance);
+        if (state.status === 'PRESENT') acc.present++;
+        else if (state.status === 'HALF_DAY') acc.halfDay++;
+        else if (state.status === 'ABSENT') acc.absent++;
+
+        acc.overtime += (Number(state.overtimePay) || 0);
+        acc.lateDues += (Number(state.lateDeduction) || 0);
+        acc.advances += (Number(curr.advancePaidToday) || 0) + (Number(state.advanceAmount) || 0);
+        return acc;
+    }, { present: 0, halfDay: 0, absent: 0, overtime: 0, lateDues: 0, advances: 0 });
 
     const filteredRecords = records.filter(({ employee }) =>
         employee.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -134,6 +154,35 @@ export default function AttendancePage() {
                 </div>
             </div>
 
+            {/* Daily KPI Summary Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Attendance Status</div>
+                    <div className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
+                        {summaryStats.present} Present {summaryStats.halfDay > 0 && <span className="text-sm font-medium text-amber-600">• {summaryStats.halfDay} Half</span>}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">{records.length} Total Staff</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Today's Overtime</div>
+                    <div className="text-lg sm:text-xl font-bold text-emerald-700 mt-1">₹{summaryStats.overtime.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Payable Addition</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Today's Late Dues / Fines</div>
+                    <div className="text-lg sm:text-xl font-bold text-amber-700 mt-1">₹{summaryStats.lateDues.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Deduction Applied</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Today's Advances</div>
+                    <div className="text-lg sm:text-xl font-bold text-rose-700 mt-1">₹{summaryStats.advances.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Cash Disbursed</div>
+                </div>
+            </div>
+
             {/* Filter / Search Bar */}
             <div className="flex items-center justify-between gap-3 bg-white border border-gray-200 p-2 rounded-xl shadow-sm">
                 <div className="relative w-full max-w-sm">
@@ -160,7 +209,7 @@ export default function AttendancePage() {
                                 <th className="p-5">Staff Name</th>
                                 <th className="p-5">Daily Rate</th>
                                 <th className="p-5 min-w-[240px]">Attendance Status</th>
-                                <th className="p-5">Punctuality</th>
+                                <th className="p-5">Punctuality & Late Dues</th>
                                 <th className="p-5">Overtime Pay (₹)</th>
                                 <th className="p-5">Advance Cash</th>
                                 <th className="p-5 text-right">Actions</th>
@@ -195,7 +244,7 @@ export default function AttendancePage() {
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="p-5 font-medium text-gray-600 align-top">₹{employee.dailyRate}</td>
+                                            <td className="p-5 font-medium text-gray-600 align-top">₹{employee.dailySalary}</td>
                                             <td className="p-5 align-top">
                                                 <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-lg w-max border border-gray-200/50">
                                                     <button
@@ -248,19 +297,34 @@ export default function AttendancePage() {
                                                             />
                                                         </div>
                                                     )}
+                                                    {lateDeduction > 0 && (
+                                                        <div className="mt-1">
+                                                            <span className="inline-flex items-center text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                                                Fine: -₹{lateDeduction}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="p-5 align-top">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-xs text-gray-400 font-medium">₹</span>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="1"
-                                                        value={overtimePay || ''}
-                                                        onChange={(e) => handleLocalChange(employee.id, 'overtimePay', parseFloat(e.target.value) || 0, attendance)}
-                                                        className="w-20 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
-                                                    />
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-xs text-gray-400 font-medium">₹</span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            placeholder="0"
+                                                            value={overtimePay || ''}
+                                                            onChange={(e) => handleLocalChange(employee.id, 'overtimePay', parseFloat(e.target.value) || 0, attendance)}
+                                                            className="w-20 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                                                        />
+                                                    </div>
+                                                    {overtimePay > 0 && (
+                                                        <span className="inline-flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 w-max">
+                                                            OT: +₹{overtimePay}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="p-5 align-top">

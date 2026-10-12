@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
-import { employees } from '@/db/schema';
+import { employees, attendance, salaryAdvances } from '@/db/schema';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, Banknote } from 'lucide-react';
+import { ArrowLeft, Calendar, Banknote, Clock, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
 
 export const runtime = 'edge';
 
@@ -29,6 +29,18 @@ export default async function EmployeeProfile({ params }: { params: { id: string
     if (!employee) {
         return notFound();
     }
+
+    // Fetch employee's complete attendance and advance records
+    const empAttendance = await db.select().from(attendance).where(eq(attendance.employeeId, resolvedParams.id));
+    const empAdvances = await db.select().from(salaryAdvances).where(eq(salaryAdvances.employeeId, resolvedParams.id));
+
+    const totalOvertime = empAttendance.reduce((sum, a) => sum + (a.overtimePay || 0), 0);
+    const totalLateDues = empAttendance.reduce((sum, a) => sum + (a.lateDeduction || 0), 0);
+    const totalAdvances = empAdvances.reduce((sum, a) => sum + (a.amount || 0), 0);
+    const daysPresent = empAttendance.filter(a => a.status === 'PRESENT').length;
+    const halfDays = empAttendance.filter(a => a.status === 'HALF_DAY').length;
+    const basePayEarned = (daysPresent * employee.dailySalary) + (halfDays * (employee.dailySalary / 2));
+    const netPayableEstimated = basePayEarned + totalOvertime - (totalLateDues + totalAdvances);
 
     return (
         <div className="max-w-5xl mx-auto space-y-8">
@@ -58,7 +70,61 @@ export default async function EmployeeProfile({ params }: { params: { id: string
                 </div>
             </div>
 
-            {/* Details & Stats Grid */}
+            {/* Employee Financial & Dues Summary */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900">Financial & Payroll Summary</h2>
+                        <p className="text-xs text-gray-500 mt-0.5">Aggregated dues, advances, and overtime for this employee.</p>
+                    </div>
+                    <Link 
+                        href={`/salary/${employee.id}`} 
+                        className="text-xs font-semibold text-[#143d30] bg-[#E2F898]/40 hover:bg-[#E2F898] px-3.5 py-2 rounded-xl border border-[#E2F898] transition-colors w-max"
+                    >
+                        View Monthly Breakdown &rarr;
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-4">
+                        <div className="flex items-center justify-between text-xs font-semibold text-emerald-700 uppercase tracking-wider">
+                            <span>Overtime Pay</span>
+                            <TrendingUp className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-emerald-800 mt-2">+ ₹{totalOvertime.toFixed(2)}</div>
+                        <div className="text-[11px] text-emerald-600 mt-1">Earned Overtime</div>
+                    </div>
+
+                    <div className="bg-amber-50/70 border border-amber-100 rounded-xl p-4">
+                        <div className="flex items-center justify-between text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                            <span>Late Dues (Fines)</span>
+                            <Clock className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-amber-800 mt-2">- ₹{totalLateDues.toFixed(2)}</div>
+                        <div className="text-[11px] text-amber-600 mt-1">Deductions Applied</div>
+                    </div>
+
+                    <div className="bg-rose-50/70 border border-rose-100 rounded-xl p-4">
+                        <div className="flex items-center justify-between text-xs font-semibold text-rose-700 uppercase tracking-wider">
+                            <span>Cash Advances</span>
+                            <DollarSign className="w-4 h-4 text-rose-600" />
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-rose-800 mt-2">- ₹{totalAdvances.toFixed(2)}</div>
+                        <div className="text-[11px] text-rose-600 mt-1">{empAdvances.length} Advance Payments</div>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            <span>Estimated Net Balance</span>
+                            <Banknote className="w-4 h-4 text-gray-600" />
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">₹{netPayableEstimated.toFixed(2)}</div>
+                        <div className="text-[11px] text-gray-500 mt-1">{daysPresent} Full, {halfDays} Half Days</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Details & Management Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 {/* Contact Info */}
@@ -93,14 +159,14 @@ export default async function EmployeeProfile({ params }: { params: { id: string
                                 <Calendar className="w-6 h-6 text-[#143d30]" />
                             </div>
                             <div className="font-semibold text-gray-900">Log Attendance</div>
-                            <div className="text-xs text-gray-500 mt-1">Mark today's status or issue a cash advance.</div>
+                            <div className="text-xs text-gray-500 mt-1">Mark today's status, punctuality, or overtime.</div>
                         </Link>
-                        <Link href="/salary" className="group border border-gray-200 rounded-xl p-4 hover:border-[#143d30]/30 hover:bg-gray-50 transition-all">
+                        <Link href={`/salary/${employee.id}`} className="group border border-gray-200 rounded-xl p-4 hover:border-[#143d30]/30 hover:bg-gray-50 transition-all">
                             <div className="text-xl mb-2">
                                 <Banknote className="w-6 h-6 text-[#143d30]" />
                             </div>
-                            <div className="font-semibold text-gray-900">View Payroll</div>
-                            <div className="text-xs text-gray-500 mt-1">Check monthly salary calculations and deductions.</div>
+                            <div className="font-semibold text-gray-900">View Payroll Ledger</div>
+                            <div className="text-xs text-gray-500 mt-1">Check day-by-day calculations, dues, and deductions.</div>
                         </Link>
                     </div>
                 </div>

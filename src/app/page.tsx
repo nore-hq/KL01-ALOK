@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Search, Bell, Plus, TrendingUp, Calendar, Banknote, Loader2 } from 'lucide-react';
 import { getDb } from '@/db';
-import { employees, salaryAdvances, billing } from '@/db/schema';
+import { employees, salaryAdvances, billing, attendance } from '@/db/schema';
 import { eq, sql, isNull, and, inArray, like } from 'drizzle-orm';
 import { Suspense } from 'react';
 import { getAuthSession } from '@/utils/auth';
@@ -26,11 +26,24 @@ async function DashboardMetrics() {
   const totalStaff = allStaff.filter(s => s.status === 'ACTIVE').length;
 
   let pendingAdvances = 0;
+  let totalLateDues = 0;
+  let totalOvertimePay = 0;
+
   if (staffIds.length > 0) {
     const advanceQuery = await db.select({ total: sql<number>`sum(${salaryAdvances.amount})` })
       .from(salaryAdvances)
       .where(inArray(salaryAdvances.employeeId, staffIds));
     pendingAdvances = advanceQuery[0]?.total || 0;
+
+    const attendanceAgg = await db.select({
+      totalLate: sql<number>`sum(${attendance.lateDeduction})`,
+      totalOvertime: sql<number>`sum(${attendance.overtimePay})`,
+    })
+      .from(attendance)
+      .where(inArray(attendance.employeeId, staffIds));
+
+    totalLateDues = attendanceAgg[0]?.totalLate || 0;
+    totalOvertimePay = attendanceAgg[0]?.totalOvertime || 0;
   }
 
   // Calculate today's revenue and jobs
@@ -47,8 +60,8 @@ async function DashboardMetrics() {
   const revenueToday = todayBills.reduce((sum, b) => sum + b.amount, 0);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 sm:divide-x divide-gray-100">
-      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 first:pl-0 rounded-xl sm:rounded-none">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 sm:divide-x divide-gray-100">
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 first:pl-0 rounded-xl sm:rounded-none">
         <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Total Staff</div>
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold text-gray-900">{totalStaff}</span>
@@ -56,7 +69,7 @@ async function DashboardMetrics() {
         </div>
       </div>
 
-      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 rounded-xl sm:rounded-none">
         <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Jobs Today</div>
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold text-gray-900">{jobsToday}</span>
@@ -64,18 +77,34 @@ async function DashboardMetrics() {
         </div>
       </div>
 
-      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 rounded-xl sm:rounded-none">
         <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Today's Revenue</div>
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold text-gray-900">₹{revenueToday}</span>
         </div>
       </div>
 
-      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-4 rounded-xl sm:rounded-none">
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 rounded-xl sm:rounded-none">
         <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Pending Advances</div>
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold text-gray-900">₹{pendingAdvances}</span>
           <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 sm:px-2 py-0.5 rounded">Unsettled</span>
+        </div>
+      </div>
+
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Late Dues (Fines)</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-amber-700">₹{totalLateDues}</span>
+          <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 sm:px-2 py-0.5 rounded">Deductions</span>
+        </div>
+      </div>
+
+      <div className="bg-gray-50/80 sm:bg-transparent p-3.5 sm:p-0 sm:px-3 rounded-xl sm:rounded-none">
+        <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">Overtime Pay</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-emerald-700">₹{totalOvertimePay}</span>
+          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 rounded">Payable</span>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-name = "kl01-alok"
+name = "kl01-emp"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
