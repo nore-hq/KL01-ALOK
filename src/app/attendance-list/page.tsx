@@ -69,11 +69,12 @@ export default function AttendanceListPage() {
         return acc;
     }, { overtime: 0, lateDues: 0, advances: 0 });
 
-    const getStatusIndicator = (status: string, isLate: boolean) => {
-        if (status === 'PRESENT' && !isLate) return <span className="text-green-600 font-bold">P</span>;
-        if (status === 'PRESENT' && isLate) return <span className="text-amber-500 font-bold">L</span>;
-        if (status === 'HALF_DAY') return <span className="text-orange-500 font-bold">HD</span>;
-        if (status === 'ABSENT') return <span className="text-red-500 font-bold">A</span>;
+    const getStatusIndicator = (status: string, isLate: boolean, notes?: string) => {
+        if (status === 'PRESENT' && !isLate) return <span className="text-green-600 font-bold" title="Present">P</span>;
+        if (status === 'PRESENT' && isLate) return <span className="text-amber-500 font-bold" title="Late">L</span>;
+        if (status === 'HALF_DAY') return <span className="text-orange-500 font-bold" title="Half Day">HD</span>;
+        if (status === 'WEEK_OFF') return <span className="text-indigo-600 font-bold" title={notes ? `Week Off: ${notes}` : 'Week Off'}>WO</span>;
+        if (status === 'ABSENT') return <span className="text-red-500 font-bold" title="Absent">A</span>;
         return <span className="text-gray-300">-</span>;
     };
 
@@ -185,7 +186,12 @@ export default function AttendanceListPage() {
                                                 <td key={dateStr} className="p-5 text-center border-l border-gray-100">
                                                     {record ? (
                                                         <div className="flex flex-col items-center justify-center gap-1 cursor-default" title={record.notes || undefined}>
-                                                            {getStatusIndicator(record.status, record.isLate)}
+                                                            {getStatusIndicator(record.status, record.isLate, record.notes)}
+                                                            {record.status === 'WEEK_OFF' && record.notes && (
+                                                                <span className="text-[10px] text-indigo-700 font-semibold px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-100 max-w-[85px] truncate" title={record.notes}>
+                                                                    {record.notes}
+                                                                </span>
+                                                            )}
                                                             {record.overtimePay > 0 && <span className="text-[10px] text-emerald-600 font-medium">OT: ₹{record.overtimePay}</span>}
                                                             {record.lateDeduction > 0 && <span className="text-[10px] text-red-500 font-medium">Fine: ₹{record.lateDeduction}</span>}
                                                             {record.advanceAmount > 0 && <span className="text-[10px] text-amber-600 font-medium">Adv: ₹{record.advanceAmount}</span>}
@@ -209,6 +215,7 @@ export default function AttendanceListPage() {
                 <span className="flex items-center gap-1"><span className="text-green-600 font-bold">P</span> Present</span>
                 <span className="flex items-center gap-1"><span className="text-amber-500 font-bold">L</span> Late</span>
                 <span className="flex items-center gap-1"><span className="text-orange-500 font-bold">HD</span> Half Day</span>
+                <span className="flex items-center gap-1"><span className="text-indigo-600 font-bold">WO</span> Week Off</span>
                 <span className="flex items-center gap-1"><span className="text-red-500 font-bold">A</span> Absent</span>
                 <span className="flex items-center gap-1"><span className="text-emerald-600 font-semibold">OT:</span> Overtime</span>
                 <span className="flex items-center gap-1"><span className="text-red-500 font-semibold">Fine:</span> Late Due</span>

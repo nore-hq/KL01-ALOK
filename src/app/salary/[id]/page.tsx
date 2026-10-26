@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getEmployeeSalaryDetails } from '@/app/actions/salary';
-import { ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EmployeeSalaryDetailsPage({ params, searchParams }: { params: { id: string }, searchParams: { month?: string } }) {
@@ -100,12 +100,24 @@ export default function EmployeeSalaryDetailsPage({ params, searchParams }: { pa
                                 <div className="flex-1 flex flex-wrap gap-x-6 gap-y-2 items-center">
                                     {log.attendance ? (
                                         <>
-                                            <span className={`inline-flex items-center gap-1.5 font-bold text-sm ${log.attendance.status === 'PRESENT' ? 'text-emerald-600' : log.attendance.status === 'HALF_DAY' ? 'text-amber-500' : 'text-rose-500'}`}>
+                                            <span className={`inline-flex items-center gap-1.5 font-bold text-sm ${
+                                                log.attendance.status === 'PRESENT' ? 'text-emerald-600' :
+                                                log.attendance.status === 'HALF_DAY' ? 'text-amber-500' :
+                                                log.attendance.status === 'WEEK_OFF' ? 'text-indigo-600' :
+                                                'text-rose-500'
+                                            }`}>
                                                 {log.attendance.status === 'PRESENT' && <CheckCircle className="w-4 h-4" />}
                                                 {log.attendance.status === 'HALF_DAY' && <Clock className="w-4 h-4" />}
+                                                {log.attendance.status === 'WEEK_OFF' && <Calendar className="w-4 h-4" />}
                                                 {log.attendance.status === 'ABSENT' && <XCircle className="w-4 h-4" />}
-                                                {log.attendance.status.replace('_', ' ')}
+                                                {log.attendance.status === 'WEEK_OFF' ? 'Week Off' : log.attendance.status.replace('_', ' ')}
                                             </span>
+
+                                            {log.attendance.notes && (
+                                                <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-md">
+                                                    {log.attendance.notes}
+                                                </span>
+                                            )}
                                             
                                             {log.attendance.overtimePay > 0 && (
                                                 <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">

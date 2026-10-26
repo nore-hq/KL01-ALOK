@@ -24,7 +24,7 @@ export const employees = sqliteTable('employees', {
     name: text('name').notNull(),
     age: integer('age').notNull(),
     phone: text('phone').notNull(),
-    position: text('position', { enum: ['MECHANIC', 'CLEANER', 'MANAGER', 'RECEPTIONIST'] }).notNull(),
+    position: text('position').notNull(),
     dailySalary: real('daily_salary').notNull(),
     status: text('status', { enum: ['ACTIVE', 'INACTIVE'] }).default('ACTIVE').notNull(),
     createdAt: text('created_at').notNull(),
@@ -36,7 +36,7 @@ export const attendance = sqliteTable('attendance', {
     id: text('id').primaryKey(),
     employeeId: text('employee_id').references(() => employees.id).notNull(),
     date: text('date').notNull(), // YYYY-MM-DD
-    status: text('status', { enum: ['PRESENT', 'ABSENT', 'HALF_DAY'] }).notNull(),
+    status: text('status', { enum: ['PRESENT', 'ABSENT', 'HALF_DAY', 'WEEK_OFF'] }).notNull(),
     isLate: integer('is_late', { mode: 'boolean' }).default(false).notNull(),
     lateDeduction: real('late_deduction').default(0).notNull(),
     overtimePay: real('overtime_pay').default(0).notNull(),

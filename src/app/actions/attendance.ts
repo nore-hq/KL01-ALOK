@@ -49,7 +49,7 @@ function getEdgeDb() {
     }
 }
 
-export async function saveAttendanceRecord(data: { employeeId: string; date: string; status: 'PRESENT' | 'ABSENT' | 'HALF_DAY'; isLate: boolean; lateDeduction: number; overtimePay: number; notes?: string; }) {
+export async function saveAttendanceRecord(data: { employeeId: string; date: string; status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'WEEK_OFF'; isLate: boolean; lateDeduction: number; overtimePay: number; notes?: string; }) {
     try {
         const db = getEdgeDb();
         const existing = await db.select().from(attendance).where(and(eq(attendance.employeeId, data.employeeId), eq(attendance.date, data.date)));
@@ -74,8 +74,86 @@ export async function recordSalaryAdvance(data: { employeeId: string; amount: nu
         const db = getEdgeDb();
         await db.insert(salaryAdvances).values({ id: crypto.randomUUID(), employeeId: data.employeeId, amount: data.amount, datePaid: data.datePaid, notes: data.notes || 'Cash Advance' }).run();
         revalidatePath('/attendance');
+        revalidatePath('/attendance-list');
+        revalidatePath('/salary');
+        revalidatePath('/');
         return { success: true };
     } catch (err) {
         return { success: false, error: 'Failed to record advance cash.' };
+    }
+}
+
+export async function updateSalaryAdvance(data: { employeeId: string; datePaid: string; newAmount: number; notes?: string; }) {
+    try {
+        const db = getEdgeDb();
+        const existing = await db.select().from(salaryAdvances).where(
+            and(
+                eq(salaryAdvances.employeeId, data.employeeId),
+                eq(salaryAdvances.datePaid, data.datePaid)
+            )
+        );
+
+        if (data.newAmount <= 0) {
+            if (existing.length > 0) {
+                await db.delete(salaryAdvances).where(
+                    and(
+                        eq(salaryAdvances.employeeId, data.employeeId),
+                        eq(salaryAdvances.datePaid, data.datePaid)
+                    )
+                ).run();
+            }
+        } else if (existing.length > 0) {
+            // Update the primary record
+            await db.update(salaryAdvances)
+                .set({ amount: data.newAmount, notes: data.notes || 'Cash Advance' })
+                .where(eq(salaryAdvances.id, existing[0].id))
+                .run();
+
+            // If duplicate records existed for that employee on the same date, clean them up
+            if (existing.length > 1) {
+                for (let i = 1; i < existing.length; i++) {
+                    await db.delete(salaryAdvances).where(eq(salaryAdvances.id, existing[i].id)).run();
+                }
+            }
+        } else {
+            // If no record existed yet, insert one
+            await db.insert(salaryAdvances).values({
+                id: crypto.randomUUID(),
+                employeeId: data.employeeId,
+                amount: data.newAmount,
+                datePaid: data.datePaid,
+                notes: data.notes || 'Cash Advance'
+            }).run();
+        }
+
+        revalidatePath('/attendance');
+        revalidatePath('/attendance-list');
+        revalidatePath('/salary');
+        revalidatePath('/');
+        return { success: true };
+    } catch (err: any) {
+        console.error('updateSalaryAdvance Error:', err);
+        return { success: false, error: err.message || 'Failed to update advance.' };
+    }
+}
+
+export async function deleteSalaryAdvance(data: { employeeId: string; datePaid: string }) {
+    try {
+        const db = getEdgeDb();
+        await db.delete(salaryAdvances).where(
+            and(
+                eq(salaryAdvances.employeeId, data.employeeId),
+                eq(salaryAdvances.datePaid, data.datePaid)
+            )
+        ).run();
+
+        revalidatePath('/attendance');
+        revalidatePath('/attendance-list');
+        revalidatePath('/salary');
+        revalidatePath('/');
+        return { success: true };
+    } catch (err: any) {
+        console.error('deleteSalaryAdvance Error:', err);
+        return { success: false, error: err.message || 'Failed to delete advance.' };
     }
 }

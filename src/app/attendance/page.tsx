@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDailyAttendance, saveAttendanceRecord, recordSalaryAdvance } from '@/app/actions/attendance';
-import { Check, Plus, Search } from 'lucide-react';
+import { getDailyAttendance, saveAttendanceRecord, recordSalaryAdvance, updateSalaryAdvance, deleteSalaryAdvance } from '@/app/actions/attendance';
+import { Check, Plus, Search, Pencil, Trash2, X, Loader2 } from 'lucide-react';
 
 export default function AttendancePage() {
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [records, setRecords] = useState<any[]>([]);
     const [search, setSearch] = useState('');
 
+    // State for inline advance editing
+    const [editingAdvanceEmpId, setEditingAdvanceEmpId] = useState<string | null>(null);
+    const [editAdvanceAmount, setEditAdvanceAmount] = useState<string>('');
+    const [isUpdatingAdvance, setIsUpdatingAdvance] = useState(false);
+
     // New state to track unsubmitted changes locally
     const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-
 
     const loadData = async () => {
         const data = await getDailyAttendance(selectedDate);
@@ -25,9 +28,92 @@ export default function AttendancePage() {
         loadData();
     }, [selectedDate]);
 
+    const handleSaveAdvance = async (employeeId: string) => {
+        const parsed = parseFloat(editAdvanceAmount);
+        if (isNaN(parsed) || parsed < 0) {
+            alert('Please enter a valid amount (0 or higher).');
+            return;
+        }
+
+        setIsUpdatingAdvance(true);
+        try {
+            const res = await updateSalaryAdvance({
+                employeeId,
+                datePaid: selectedDate,
+                newAmount: parsed,
+            });
+
+            if (res.success) {
+                setRecords((prev) =>
+                    prev.map((r) =>
+                        r.employee.id === employeeId
+                            ? { ...r, advancePaidToday: parsed }
+                            : r
+                    )
+                );
+                setPendingChanges((prev) => {
+                    const copy = { ...prev };
+                    if (copy[employeeId]) {
+                        const { advanceAmount, ...rest } = copy[employeeId];
+                        copy[employeeId] = rest;
+                    }
+                    return copy;
+                });
+                setEditingAdvanceEmpId(null);
+            } else {
+                alert(res.error || 'Failed to update advance.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update advance.');
+        } finally {
+            setIsUpdatingAdvance(false);
+        }
+    };
+
+    const handleDeleteAdvance = async (employeeId: string, employeeName: string) => {
+        if (!confirm(`Are you sure you want to delete the advance record for ${employeeName}?`)) {
+            return;
+        }
+
+        setIsUpdatingAdvance(true);
+        try {
+            const res = await deleteSalaryAdvance({
+                employeeId,
+                datePaid: selectedDate,
+            });
+
+            if (res.success) {
+                setRecords((prev) =>
+                    prev.map((r) =>
+                        r.employee.id === employeeId
+                            ? { ...r, advancePaidToday: 0 }
+                            : r
+                    )
+                );
+                setPendingChanges((prev) => {
+                    const copy = { ...prev };
+                    if (copy[employeeId]) {
+                        const { advanceAmount, ...rest } = copy[employeeId];
+                        copy[employeeId] = rest;
+                    }
+                    return copy;
+                });
+                setEditingAdvanceEmpId(null);
+            } else {
+                alert(res.error || 'Failed to delete advance.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete advance.');
+        } finally {
+            setIsUpdatingAdvance(false);
+        }
+    };
+
     // Helper to merge database state with local unsaved state
     const getAttendanceState = (employeeId: string, dbAttendance: any) => {
-        return pendingChanges[employeeId] || dbAttendance || { status: 'UNMARKED', isLate: false, lateDeduction: 0, overtimePay: 0 };
+        return pendingChanges[employeeId] || dbAttendance || { status: 'UNMARKED', isLate: false, lateDeduction: 0, overtimePay: 0, notes: '' };
     };
 
     const handleLocalChange = (employeeId: string, field: string, value: any, dbAttendance: any) => {
@@ -38,6 +124,13 @@ export default function AttendancePage() {
             // If setting back to On Time, clear the late deduction
             if (field === 'isLate' && value === false) {
                 updatedState.lateDeduction = 0;
+            }
+
+            // If setting status to WEEK_OFF or ABSENT, clear late and overtime
+            if (field === 'status' && (value === 'WEEK_OFF' || value === 'ABSENT')) {
+                updatedState.isLate = false;
+                updatedState.lateDeduction = 0;
+                updatedState.overtimePay = 0;
             }
 
             return {
@@ -70,10 +163,14 @@ export default function AttendancePage() {
                     (data.status && data.status !== 'UNMARKED') || 
                     data.isLate || 
                     (data.lateDeduction && data.lateDeduction > 0) || 
-                    (data.overtimePay && data.overtimePay > 0);
+                    (data.overtimePay && data.overtimePay > 0) ||
+                    data.notes !== undefined;
 
                 if (shouldSaveAttendance) {
                     const finalStatus = (!data.status || data.status === 'UNMARKED') ? 'PRESENT' : data.status;
+                    const existingRecord = records.find(r => r.employee.id === employeeId)?.attendance;
+                    const finalNotes = data.notes !== undefined ? data.notes : (existingRecord?.notes || '');
+
                     calls.push(saveAttendanceRecord({
                         employeeId,
                         date: selectedDate,
@@ -81,7 +178,7 @@ export default function AttendancePage() {
                         isLate: !!data.isLate,
                         lateDeduction: Number(data.lateDeduction) || 0,
                         overtimePay: Number(data.overtimePay) || 0,
-                        notes: data.notes || '',
+                        notes: finalNotes || '',
                     }));
                 }
                 
@@ -106,13 +203,14 @@ export default function AttendancePage() {
         const state = getAttendanceState(curr.employee.id, curr.attendance);
         if (state.status === 'PRESENT') acc.present++;
         else if (state.status === 'HALF_DAY') acc.halfDay++;
+        else if (state.status === 'WEEK_OFF') acc.weekOff++;
         else if (state.status === 'ABSENT') acc.absent++;
 
         acc.overtime += (Number(state.overtimePay) || 0);
         acc.lateDues += (Number(state.lateDeduction) || 0);
         acc.advances += (Number(curr.advancePaidToday) || 0) + (Number(state.advanceAmount) || 0);
         return acc;
-    }, { present: 0, halfDay: 0, absent: 0, overtime: 0, lateDues: 0, advances: 0 });
+    }, { present: 0, halfDay: 0, weekOff: 0, absent: 0, overtime: 0, lateDues: 0, advances: 0 });
 
     const filteredRecords = records.filter(({ employee }) =>
         employee.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,7 +257,7 @@ export default function AttendancePage() {
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Attendance Status</div>
                     <div className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
-                        {summaryStats.present} Present {summaryStats.halfDay > 0 && <span className="text-sm font-medium text-amber-600">• {summaryStats.halfDay} Half</span>}
+                        {summaryStats.present} Present {summaryStats.halfDay > 0 && <span className="text-sm font-medium text-amber-600">• {summaryStats.halfDay} Half</span>} {summaryStats.weekOff > 0 && <span className="text-sm font-medium text-indigo-600">• {summaryStats.weekOff} Off</span>}
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">{records.length} Total Staff</div>
                 </div>
@@ -208,7 +306,7 @@ export default function AttendancePage() {
                             <tr>
                                 <th className="p-5">Staff Name</th>
                                 <th className="p-5">Daily Rate</th>
-                                <th className="p-5 min-w-[240px]">Attendance Status</th>
+                                <th className="p-5 min-w-[320px]">Attendance Status</th>
                                 <th className="p-5">Punctuality & Late Dues</th>
                                 <th className="p-5">Overtime Pay (₹)</th>
                                 <th className="p-5">Advance Cash</th>
@@ -226,7 +324,7 @@ export default function AttendancePage() {
                                 filteredRecords.map(({ employee, attendance, advancePaidToday }) => {
                                     // Use local state if it exists, otherwise use DB state
                                     const currentState = getAttendanceState(employee.id, attendance);
-                                    const { status, isLate, lateDeduction, overtimePay } = currentState;
+                                    const { status, isLate, lateDeduction, overtimePay, notes } = currentState;
 
                                     return (
                                         <tr key={employee.id} className="hover:bg-gray-50/50 transition-colors">
@@ -246,25 +344,49 @@ export default function AttendancePage() {
                                             </td>
                                             <td className="p-5 font-medium text-gray-600 align-top">₹{employee.dailySalary}</td>
                                             <td className="p-5 align-top">
-                                                <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-lg w-max border border-gray-200/50">
-                                                    <button
-                                                        onClick={() => handleLocalChange(employee.id, 'status', 'PRESENT', attendance)}
-                                                        className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'PRESENT' ? 'bg-[#143d30] text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                                                    >
-                                                        Present
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleLocalChange(employee.id, 'status', 'HALF_DAY', attendance)}
-                                                        className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'HALF_DAY' ? 'bg-amber-500 text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                                                    >
-                                                        Half Day
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleLocalChange(employee.id, 'status', 'ABSENT', attendance)}
-                                                        className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'ABSENT' ? 'bg-rose-500 text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                                                    >
-                                                        Absent
-                                                    </button>
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center gap-1.5 bg-gray-100/50 p-1 rounded-lg w-max border border-gray-200/50">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleLocalChange(employee.id, 'status', 'PRESENT', attendance)}
+                                                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'PRESENT' ? 'bg-[#143d30] text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                                                        >
+                                                            Present
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleLocalChange(employee.id, 'status', 'HALF_DAY', attendance)}
+                                                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'HALF_DAY' ? 'bg-amber-500 text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                                                        >
+                                                            Half Day
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleLocalChange(employee.id, 'status', 'ABSENT', attendance)}
+                                                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'ABSENT' ? 'bg-rose-500 text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                                                        >
+                                                            Absent
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleLocalChange(employee.id, 'status', 'WEEK_OFF', attendance)}
+                                                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${status === 'WEEK_OFF' ? 'bg-indigo-600 text-white shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                                                        >
+                                                            Week Off
+                                                        </button>
+                                                    </div>
+
+                                                    {status === 'WEEK_OFF' && (
+                                                        <div className="flex items-center gap-1.5 animate-fade-in">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Reason (e.g. Christmas, Sunday, Holiday...)"
+                                                                value={notes !== undefined ? notes : (attendance?.notes || '')}
+                                                                onChange={(e) => handleLocalChange(employee.id, 'notes', e.target.value, attendance)}
+                                                                className="w-60 bg-white border border-indigo-200 focus:border-indigo-600 rounded-lg px-2.5 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-600 shadow-sm placeholder:text-gray-400 font-medium"
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="p-5 align-top">
@@ -328,27 +450,114 @@ export default function AttendancePage() {
                                                 </div>
                                             </td>
                                             <td className="p-5 align-top">
-                                                {advancePaidToday > 0 ? (
-                                                    <span className="inline-flex items-center gap-1 bg-[#E2F898]/30 text-[#143d30] px-2.5 py-1 rounded-md text-xs font-bold border border-[#E2F898]">
-                                                        ₹{advancePaidToday}
-                                                    </span>
+                                                {editingAdvanceEmpId === employee.id ? (
+                                                    <div className="flex items-center gap-1.5 animate-fade-in">
+                                                        <span className="text-xs text-gray-400 font-medium">₹</span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            autoFocus
+                                                            placeholder="0"
+                                                            value={editAdvanceAmount}
+                                                            onChange={(e) => setEditAdvanceAmount(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') handleSaveAdvance(employee.id);
+                                                                if (e.key === 'Escape') setEditingAdvanceEmpId(null);
+                                                            }}
+                                                            className="w-20 bg-white border-2 border-[#143d30] rounded-lg px-2 py-1 text-xs text-gray-900 font-bold focus:outline-none shadow-sm"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            title="Save Advance"
+                                                            disabled={isUpdatingAdvance}
+                                                            onClick={() => handleSaveAdvance(employee.id)}
+                                                            className="p-1.5 rounded-lg bg-[#143d30] text-white hover:bg-[#1a4f3f] disabled:opacity-50 transition-colors shadow-sm"
+                                                        >
+                                                            {isUpdatingAdvance ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            title="Cancel"
+                                                            disabled={isUpdatingAdvance}
+                                                            onClick={() => setEditingAdvanceEmpId(null)}
+                                                            className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
                                                 ) : (
-                                                    <span className="text-gray-400">—</span>
+                                                    <div className="flex items-center gap-2">
+                                                        {advancePaidToday > 0 ? (
+                                                            <div className="inline-flex items-center gap-1.5 bg-[#E2F898]/40 border border-[#b2d952] pl-2.5 pr-1.5 py-1 rounded-lg">
+                                                                <span className="text-xs font-bold text-[#143d30]">
+                                                                    ₹{advancePaidToday}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Edit Advance Amount"
+                                                                    onClick={() => {
+                                                                        setEditingAdvanceEmpId(employee.id);
+                                                                        setEditAdvanceAmount(String(advancePaidToday));
+                                                                    }}
+                                                                    className="p-1 text-gray-600 hover:text-[#143d30] hover:bg-white/80 rounded transition-colors"
+                                                                >
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Delete Advance"
+                                                                    onClick={() => handleDeleteAdvance(employee.id, employee.name)}
+                                                                    className="p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                                                >
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 text-gray-400">
+                                                                <span>—</span>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Add Advance"
+                                                                    onClick={() => {
+                                                                        setEditingAdvanceEmpId(employee.id);
+                                                                        setEditAdvanceAmount('');
+                                                                    }}
+                                                                    className="p-1 text-gray-400 hover:text-[#143d30] hover:bg-gray-100 rounded transition-colors"
+                                                                >
+                                                                    <Plus className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="p-5 text-right align-top">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    <span className="text-xs text-gray-400 font-medium">₹</span>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="1"
-                                                        placeholder="Amount"
-                                                        value={currentState.advanceAmount || ''}
-                                                        onChange={(e) => handleLocalChange(employee.id, 'advanceAmount', parseFloat(e.target.value) || 0, attendance)}
-                                                        className="w-20 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
-                                                    />
-                                                </div>
+                                                {advancePaidToday > 0 ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEditingAdvanceEmpId(employee.id);
+                                                            setEditAdvanceAmount(String(advancePaidToday));
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#143d30] bg-gray-100 hover:bg-[#E2F898]/40 border border-gray-200 hover:border-[#143d30]/30 rounded-lg transition-colors"
+                                                    >
+                                                        <Pencil className="w-3 h-3" /> Edit Advance
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        <span className="text-xs text-gray-400 font-medium">₹</span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            placeholder="Amount"
+                                                            value={currentState.advanceAmount || ''}
+                                                            onChange={(e) => handleLocalChange(employee.id, 'advanceAmount', parseFloat(e.target.value) || 0, attendance)}
+                                                            className="w-20 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                                                        />
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     );

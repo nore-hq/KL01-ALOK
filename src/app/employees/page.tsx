@@ -22,6 +22,17 @@ export default function EmployeesPage() {
     const [editEmp, setEditEmp] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(false);
     
+    // Custom Position State
+    const [isCustomPosition, setIsCustomPosition] = useState(false);
+    const [selectedPosition, setSelectedPosition] = useState('');
+    const [customPositionValue, setCustomPositionValue] = useState('');
+
+    const defaultPositions = ['MECHANIC', 'CLEANER', 'MANAGER', 'RECEPTIONIST'];
+    const customPositionsFromStaff = Array.from(new Set(
+        staff.map(s => s.position?.trim().toUpperCase()).filter(p => p && !defaultPositions.includes(p))
+    ));
+    const allPositions = [...defaultPositions, ...customPositionsFromStaff];
+
     // Delete Modal State
     const [deleteModalEmp, setDeleteModalEmp] = useState<Employee | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -34,6 +45,25 @@ export default function EmployeesPage() {
     useEffect(() => {
         loadStaff();
     }, []);
+
+    useEffect(() => {
+        if (editEmp) {
+            const pos = editEmp.position?.trim().toUpperCase() || '';
+            if (defaultPositions.includes(pos)) {
+                setSelectedPosition(pos);
+                setIsCustomPosition(false);
+                setCustomPositionValue('');
+            } else {
+                setSelectedPosition(pos);
+                setIsCustomPosition(true);
+                setCustomPositionValue(pos);
+            }
+        } else {
+            setSelectedPosition('');
+            setIsCustomPosition(false);
+            setCustomPositionValue('');
+        }
+    }, [editEmp, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -213,14 +243,64 @@ export default function EmployeesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Position</label>
-                                <select name="position" defaultValue={editEmp?.position || ''} required className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20">
-                                    <option value="">Select Role</option>
-                                    <option value="MECHANIC">Mechanic</option>
-                                    <option value="CLEANER">Cleaner</option>
-                                    <option value="MANAGER">Manager</option>
-                                    <option value="RECEPTIONIST">Receptionist</option>
-                                </select>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Position</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCustomPosition(!isCustomPosition);
+                                            if (!isCustomPosition) {
+                                                setCustomPositionValue(selectedPosition || '');
+                                            }
+                                        }}
+                                        className="text-xs font-semibold text-[#143d30] hover:underline flex items-center gap-1"
+                                    >
+                                        {isCustomPosition ? '← Select standard role' : '+ Add custom position'}
+                                    </button>
+                                </div>
+
+                                {isCustomPosition ? (
+                                    <div className="space-y-1.5 animate-fade-in">
+                                        <input
+                                            name="position"
+                                            type="text"
+                                            required
+                                            autoFocus
+                                            placeholder="Type new position (e.g. Security, Driver, Detailer...)"
+                                            value={customPositionValue}
+                                            onChange={(e) => setCustomPositionValue(e.target.value)}
+                                            className="w-full bg-white border-2 border-[#143d30]/60 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-[#143d30] focus:ring-1 focus:ring-[#143d30] font-medium"
+                                        />
+                                        <p className="text-[11px] text-gray-500">
+                                            Type any custom role title. It will be saved and available for other staff.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <select
+                                        name="position"
+                                        value={selectedPosition}
+                                        onChange={(e) => {
+                                            if (e.target.value === '__NEW__') {
+                                                setIsCustomPosition(true);
+                                                setCustomPositionValue('');
+                                            } else {
+                                                setSelectedPosition(e.target.value);
+                                            }
+                                        }}
+                                        required
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#143d30]/20"
+                                    >
+                                        <option value="">Select Role</option>
+                                        {allPositions.map((pos) => (
+                                            <option key={pos} value={pos}>
+                                                {pos.charAt(0).toUpperCase() + pos.slice(1).toLowerCase()}
+                                            </option>
+                                        ))}
+                                        <option value="__NEW__" className="font-semibold text-[#143d30]">
+                                            + Type New Custom Position...
+                                        </option>
+                                    </select>
+                                )}
                             </div>
 
                             <div>
